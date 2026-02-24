@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.config import ANTHROPIC_API_KEY
 from app.models.scan import Scan
-from app.models.schemas import AIVerdict, CheckResult, ScanResponse
+from app.models.schemas import AIVerdict, CheckResult, ScanResponse, URLScanResult
 from app.services.analyzers import (
     check_virustotal,
     check_google_safe_browsing,
@@ -20,6 +20,7 @@ from app.services.analyzers import (
     check_ip_geolocation,
     check_url_structure,
     check_page_content,
+    check_urlscan,
 )
 
 
@@ -136,24 +137,27 @@ async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -
 
 
 async def run_scan(url: str, db: Session) -> ScanResponse:
-    # Run all checks concurrently
-    results = await asyncio.gather(
-        check_virustotal(url),
-        check_google_safe_browsing(url),
-        check_whois_domain_age(url),
-        check_ssl_certificate(url),
-        check_redirect_chain(url),
-        check_suspicious_keywords(url),
-        check_lookalike_domain(url),
-        check_ip_geolocation(url),
-        check_url_structure(url),
-        check_page_content(url),
+    # Run all checks and URLscan concurrently
+    check_results, urlscan_result = await asyncio.gather(
+        asyncio.gather(
+            check_virustotal(url),
+            check_google_safe_browsing(url),
+            check_whois_domain_age(url),
+            check_ssl_certificate(url),
+            check_redirect_chain(url),
+            check_suspicious_keywords(url),
+            check_lookalike_domain(url),
+            check_ip_geolocation(url),
+            check_url_structure(url),
+            check_page_content(url),
+        ),
+        check_urlscan(url),
     )
 
     # Unpack redirect chain (returns tuple)
     checks = []
     redirect_chain = []
-    for r in results:
+    for r in check_results:
         if isinstance(r, tuple):
             check_result, chain = r
             checks.append(check_result)
@@ -174,6 +178,8 @@ async def run_scan(url: str, db: Session) -> ScanResponse:
     }
     if ai_verdict:
         results_data["ai_verdict"] = ai_verdict.model_dump()
+    if urlscan_result:
+        results_data["urlscan"] = urlscan_result.model_dump()
 
     scan = Scan(
         url=url,
@@ -194,5 +200,6 @@ async def run_scan(url: str, db: Session) -> ScanResponse:
         checks=checks,
         redirect_chain=redirect_chain,
         ai_verdict=ai_verdict,
+        urlscan=urlscan_result,
         created_at=scan.created_at,
     )

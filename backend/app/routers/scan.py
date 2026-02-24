@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.scan import Scan
 from app.models.schemas import (
     AIVerdict,
+    URLScanResult,
     ScanRequest,
     ScanResponse,
     ScanHistoryItem,
@@ -41,6 +42,8 @@ async def get_scan(scan_id: str, db: Session = Depends(get_db)):
     redirect_chain = data.get("redirect_chain", [])
     ai_verdict_data = data.get("ai_verdict")
     ai_verdict = AIVerdict(**ai_verdict_data) if ai_verdict_data else None
+    urlscan_data = data.get("urlscan")
+    urlscan = URLScanResult(**urlscan_data) if urlscan_data else None
     _, verdict_color = get_verdict(scan.risk_score)
 
     return ScanResponse(
@@ -52,6 +55,7 @@ async def get_scan(scan_id: str, db: Session = Depends(get_db)):
         checks=checks,
         redirect_chain=redirect_chain,
         ai_verdict=ai_verdict,
+        urlscan=urlscan,
         created_at=scan.created_at,
     )
 

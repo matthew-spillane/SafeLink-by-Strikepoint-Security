@@ -3,6 +3,7 @@ import { Link2, RotateCcw } from "lucide-react";
 import AIVerdictCard from "./AIVerdictCard";
 import RiskGauge from "./RiskGauge";
 import VerdictBadge from "./VerdictBadge";
+import PagePreview from "./PagePreview";
 import SummaryBar from "./SummaryBar";
 import CheckCard from "./CheckCard";
 import RedirectChain from "./RedirectChain";
@@ -15,10 +16,10 @@ export default function ResultsDashboard({ result, onReset }) {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* AI Analyst Verdict */}
+      {/* 1. AI Analyst Verdict */}
       <AIVerdictCard aiVerdict={result.ai_verdict} />
 
-      {/* Score + Verdict */}
+      {/* 2. Score + Verdict */}
       <div className="flex flex-col items-center gap-3 pt-2">
         <RiskGauge score={result.risk_score} />
         <VerdictBadge verdict={result.verdict} />
@@ -26,6 +27,9 @@ export default function ResultsDashboard({ result, onReset }) {
           {result.url}
         </p>
       </div>
+
+      {/* 3. Page Preview (URLscan screenshot) */}
+      <PagePreview urlscan={result.urlscan} />
 
       {/* Action buttons */}
       <div className="flex justify-center gap-3">
@@ -45,13 +49,13 @@ export default function ResultsDashboard({ result, onReset }) {
         </button>
       </div>
 
-      {/* Summary */}
+      {/* 4. Summary */}
       <SummaryBar checks={result.checks} />
 
       {/* Redirect chain */}
       <RedirectChain chain={result.redirect_chain} />
 
-      {/* Individual checks */}
+      {/* 5. Individual checks (Detailed Results) */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
           Detailed Results

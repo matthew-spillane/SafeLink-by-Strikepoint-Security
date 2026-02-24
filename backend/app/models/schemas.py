@@ -21,6 +21,13 @@ class AIVerdict(BaseModel):
     explanation: str
 
 
+class URLScanResult(BaseModel):
+    screenshot_url: Optional[str] = None
+    verdict: Optional[str] = None
+    report_url: Optional[str] = None
+    available: bool = True
+
+
 class ScanResponse(BaseModel):
     id: str
     url: str
@@ -30,6 +37,7 @@ class ScanResponse(BaseModel):
     checks: list[CheckResult]
     redirect_chain: list[str]
     ai_verdict: Optional[AIVerdict] = None
+    urlscan: Optional[URLScanResult] = None
     created_at: datetime
 
     class Config:

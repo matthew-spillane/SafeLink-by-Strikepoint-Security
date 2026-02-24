@@ -11,8 +11,8 @@ import httpx
 import whois
 from thefuzz import fuzz
 
-from app.config import VIRUSTOTAL_API_KEY, GOOGLE_SAFE_BROWSING_API_KEY
-from app.models.schemas import CheckResult
+from app.config import VIRUSTOTAL_API_KEY, GOOGLE_SAFE_BROWSING_API_KEY, URLSCAN_API_KEY
+from app.models.schemas import CheckResult, URLScanResult
 
 SUSPICIOUS_KEYWORDS = [
     "login", "verify", "secure", "account", "update", "confirm", "banking",
@@ -601,3 +601,71 @@ async def check_page_content(url: str) -> CheckResult:
             summary=f"Could not fetch page content: {str(e)}",
             details={"error": str(e)},
         )
+
+
+import logging
+
+_urlscan_logger = logging.getLogger(__name__)
+
+
+async def check_urlscan(url: str) -> URLScanResult:
+    """Submit URL to URLscan.io, poll for results, return screenshot + verdict."""
+    if not URLSCAN_API_KEY:
+        return URLScanResult(available=False)
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            # Submit scan
+            submit = await client.post(
+                "https://urlscan.io/api/v1/scan/",
+                headers={"API-Key": URLSCAN_API_KEY, "Content-Type": "application/json"},
+                json={"url": url, "visibility": "public"},
+            )
+            if submit.status_code not in (200, 429):
+                _urlscan_logger.warning("URLscan submit returned %s", submit.status_code)
+                return URLScanResult(available=False)
+            if submit.status_code == 429:
+                return URLScanResult(available=False)
+
+            data = submit.json()
+            uuid = data.get("uuid", "")
+            if not uuid:
+                return URLScanResult(available=False)
+
+            result_url = f"https://urlscan.io/api/v1/result/{uuid}/"
+            report_url = f"https://urlscan.io/result/{uuid}/"
+            screenshot_url = f"https://urlscan.io/screenshots/{uuid}.png"
+
+            # Poll for results (URLscan is async — returns 404 until ready)
+            for wait in (4, 5, 6, 7, 8):
+                await asyncio.sleep(wait)
+                resp = await client.get(result_url)
+                if resp.status_code == 200:
+                    result = resp.json()
+                    verdicts = result.get("verdicts", {}).get("overall", {})
+                    malicious = verdicts.get("malicious", False)
+                    score = verdicts.get("score", 0)
+                    if malicious:
+                        verdict_label = "Malicious"
+                    elif score >= 50:
+                        verdict_label = "Suspicious"
+                    elif score > 0:
+                        verdict_label = "Potentially Suspicious"
+                    else:
+                        verdict_label = "Clean"
+                    return URLScanResult(
+                        screenshot_url=screenshot_url,
+                        verdict=verdict_label,
+                        report_url=report_url,
+                        available=True,
+                    )
+
+            # Timed out but we still have the screenshot/report URLs
+            return URLScanResult(
+                screenshot_url=screenshot_url,
+                verdict=None,
+                report_url=report_url,
+                available=True,
+            )
+    except Exception as e:
+        _urlscan_logger.warning("URLscan check failed: %s", e)
+        return URLScanResult(available=False)
