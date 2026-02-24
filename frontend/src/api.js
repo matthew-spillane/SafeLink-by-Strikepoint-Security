@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_URL || "";
+const API_BASE =
+  "https://safelink-by-strikepoint-security-production.up.railway.app";
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
