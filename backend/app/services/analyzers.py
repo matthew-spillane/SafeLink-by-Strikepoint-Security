@@ -113,7 +113,7 @@ async def check_google_safe_browsing(url: str) -> CheckResult:
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             payload = {
-                "client": {"clientId": "phishscan", "clientVersion": "1.0.0"},
+                "client": {"clientId": "safelink", "clientVersion": "1.0.0"},
                 "threatInfo": {
                     "threatTypes": [
                         "MALWARE",

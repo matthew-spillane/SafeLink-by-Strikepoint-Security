@@ -8,7 +8,7 @@ from app.routers import scan
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="PhishScan API",
+    title="SafeLink API",
     description="Phishing URL analysis and risk scoring API",
     version="1.0.0",
 )

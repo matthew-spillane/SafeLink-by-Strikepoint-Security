@@ -4,12 +4,12 @@ const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const [dark, setDark] = useState(() => {
-    const saved = localStorage.getItem("phishscan-theme");
+    const saved = localStorage.getItem("safelink-theme");
     return saved ? saved === "dark" : true;
   });
 
   useEffect(() => {
-    localStorage.setItem("phishscan-theme", dark ? "dark" : "light");
+    localStorage.setItem("safelink-theme", dark ? "dark" : "light");
     document.documentElement.classList.toggle("dark", dark);
     document.documentElement.classList.toggle("light", !dark);
   }, [dark]);

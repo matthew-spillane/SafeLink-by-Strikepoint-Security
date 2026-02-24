@@ -60,7 +60,7 @@ export default function HomePage() {
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
             <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-              PhishScan
+              SafeLink
             </span>
           </h1>
           <p className="text-gray-400 text-lg">

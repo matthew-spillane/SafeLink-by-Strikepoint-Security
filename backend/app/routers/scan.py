@@ -73,4 +73,4 @@ async def get_history(db: Session = Depends(get_db)):
 
 @router.get("/health")
 async def health():
-    return {"status": "ok", "service": "PhishScan API"}
+    return {"status": "ok", "service": "SafeLink API"}

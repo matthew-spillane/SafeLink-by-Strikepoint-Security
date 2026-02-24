@@ -1,4 +1,4 @@
-# PhishScan
+# SafeLink
 
 A full-stack phishing URL analyzer that runs 10 security checks against any URL and produces a detailed risk report.
 
