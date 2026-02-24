@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.scan import Scan
 from app.models.schemas import (
+    AIVerdict,
     ScanRequest,
     ScanResponse,
     ScanHistoryItem,
@@ -38,6 +39,8 @@ async def get_scan(scan_id: str, db: Session = Depends(get_db)):
     data = json.loads(scan.results_json)
     checks = [CheckResult(**c) for c in data.get("checks", [])]
     redirect_chain = data.get("redirect_chain", [])
+    ai_verdict_data = data.get("ai_verdict")
+    ai_verdict = AIVerdict(**ai_verdict_data) if ai_verdict_data else None
     _, verdict_color = get_verdict(scan.risk_score)
 
     return ScanResponse(
@@ -48,6 +51,7 @@ async def get_scan(scan_id: str, db: Session = Depends(get_db)):
         verdict_color=verdict_color,
         checks=checks,
         redirect_chain=redirect_chain,
+        ai_verdict=ai_verdict,
         created_at=scan.created_at,
     )
 

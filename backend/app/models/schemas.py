@@ -15,6 +15,12 @@ class CheckResult(BaseModel):
     details: Optional[Any] = None
 
 
+class AIVerdict(BaseModel):
+    verdict: str
+    confidence: str
+    explanation: str
+
+
 class ScanResponse(BaseModel):
     id: str
     url: str
@@ -23,6 +29,7 @@ class ScanResponse(BaseModel):
     verdict_color: str
     checks: list[CheckResult]
     redirect_chain: list[str]
+    ai_verdict: Optional[AIVerdict] = None
     created_at: datetime
 
     class Config:

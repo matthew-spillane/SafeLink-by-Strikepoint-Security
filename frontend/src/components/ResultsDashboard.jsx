@@ -1,5 +1,6 @@
 import React from "react";
 import { Link2, RotateCcw } from "lucide-react";
+import AIVerdictCard from "./AIVerdictCard";
 import RiskGauge from "./RiskGauge";
 import VerdictBadge from "./VerdictBadge";
 import SummaryBar from "./SummaryBar";
@@ -14,6 +15,9 @@ export default function ResultsDashboard({ result, onReset }) {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {/* AI Analyst Verdict */}
+      <AIVerdictCard aiVerdict={result.ai_verdict} />
+
       {/* Score + Verdict */}
       <div className="flex flex-col items-center gap-3 pt-2">
         <RiskGauge score={result.risk_score} />

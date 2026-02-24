@@ -1,11 +1,14 @@
 import asyncio
 import json
+import logging
 from datetime import datetime, timezone
 
+import anthropic
 from sqlalchemy.orm import Session
 
+from app.config import ANTHROPIC_API_KEY
 from app.models.scan import Scan
-from app.models.schemas import CheckResult, ScanResponse
+from app.models.schemas import AIVerdict, CheckResult, ScanResponse
 from app.services.analyzers import (
     check_virustotal,
     check_google_safe_browsing,
@@ -83,6 +86,55 @@ def get_verdict(score: int) -> tuple[str, str]:
     return "Phishing", "red"
 
 
+logger = logging.getLogger(__name__)
+
+AI_SYSTEM_PROMPT = (
+    "You are a senior cybersecurity threat analyst. Analyze the following URL "
+    "scan results and make an independent judgment about phishing likelihood. "
+    "Look holistically at all signals — URL structure, domain name, keywords, "
+    "age, SSL, redirects. Explicitly call out brand impersonation patterns even "
+    "if reputation APIs return clean results. Return a JSON object with three "
+    "fields: verdict (one of: Safe, Suspicious, Likely Phishing, Phishing), "
+    "confidence (Low, Medium, or High), and explanation (2-3 sentences in plain "
+    "English suitable for non-technical users)."
+)
+
+
+async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -> AIVerdict | None:
+    if not ANTHROPIC_API_KEY:
+        return None
+    try:
+        scan_data = {
+            "url": url,
+            "risk_score": risk_score,
+            "checks": [c.model_dump() for c in checks],
+        }
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        message = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=300,
+            system=AI_SYSTEM_PROMPT,
+            messages=[
+                {"role": "user", "content": f"Analyze this URL scan:\n{json.dumps(scan_data, indent=2)}"},
+            ],
+        )
+        text = message.content[0].text.strip()
+        # Strip markdown code fences if present
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+            if text.endswith("```"):
+                text = text[:-3].strip()
+        result = json.loads(text)
+        return AIVerdict(
+            verdict=result["verdict"],
+            confidence=result["confidence"],
+            explanation=result["explanation"],
+        )
+    except Exception as e:
+        logger.warning("AI verdict failed: %s", e)
+        return None
+
+
 async def run_scan(url: str, db: Session) -> ScanResponse:
     # Run all checks concurrently
     results = await asyncio.gather(
@@ -112,15 +164,22 @@ async def run_scan(url: str, db: Session) -> ScanResponse:
     risk_score = calculate_risk_score(checks)
     verdict, verdict_color = get_verdict(risk_score)
 
+    # Get AI analyst verdict
+    ai_verdict = await get_ai_verdict(url, checks, risk_score)
+
     # Save to database
+    results_data = {
+        "checks": [c.model_dump() for c in checks],
+        "redirect_chain": redirect_chain,
+    }
+    if ai_verdict:
+        results_data["ai_verdict"] = ai_verdict.model_dump()
+
     scan = Scan(
         url=url,
         risk_score=risk_score,
         verdict=verdict,
-        results_json=json.dumps({
-            "checks": [c.model_dump() for c in checks],
-            "redirect_chain": redirect_chain,
-        }),
+        results_json=json.dumps(results_data),
     )
     db.add(scan)
     db.commit()
@@ -134,5 +193,6 @@ async def run_scan(url: str, db: Session) -> ScanResponse:
         verdict_color=verdict_color,
         checks=checks,
         redirect_chain=redirect_chain,
+        ai_verdict=ai_verdict,
         created_at=scan.created_at,
     )
