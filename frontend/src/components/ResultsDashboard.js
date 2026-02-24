@@ -1,0 +1,61 @@
+import React from "react";
+import { Link2, RotateCcw } from "lucide-react";
+import RiskGauge from "./RiskGauge";
+import VerdictBadge from "./VerdictBadge";
+import SummaryBar from "./SummaryBar";
+import CheckCard from "./CheckCard";
+import RedirectChain from "./RedirectChain";
+
+export default function ResultsDashboard({ result, onReset }) {
+  const copyLink = () => {
+    const link = `${window.location.origin}/scan/${result.id}`;
+    navigator.clipboard.writeText(link);
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Score + Verdict */}
+      <div className="flex flex-col items-center gap-3 pt-2">
+        <RiskGauge score={result.risk_score} />
+        <VerdictBadge verdict={result.verdict} />
+        <p className="text-sm text-gray-400 font-mono truncate max-w-md" title={result.url}>
+          {result.url}
+        </p>
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex justify-center gap-3">
+        <button
+          onClick={copyLink}
+          className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg glass-card hover:bg-white/10 transition-colors"
+        >
+          <Link2 className="w-4 h-4" />
+          Copy Report Link
+        </button>
+        <button
+          onClick={onReset}
+          className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg glass-card hover:bg-white/10 transition-colors"
+        >
+          <RotateCcw className="w-4 h-4" />
+          Scan Another URL
+        </button>
+      </div>
+
+      {/* Summary */}
+      <SummaryBar checks={result.checks} />
+
+      {/* Redirect chain */}
+      <RedirectChain chain={result.redirect_chain} />
+
+      {/* Individual checks */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+          Detailed Results
+        </h3>
+        {result.checks.map((check, i) => (
+          <CheckCard key={i} check={check} />
+        ))}
+      </div>
+    </div>
+  );
+}
