@@ -136,7 +136,7 @@ async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -
         }
         result = await asyncio.wait_for(
             asyncio.to_thread(_call_anthropic_sync, scan_data),
-            timeout=10,
+            timeout=5,
         )
         return AIVerdict(
             verdict=result["verdict"],
