@@ -29,7 +29,7 @@ export default function ResultsDashboard({ result, onReset }) {
       </div>
 
       {/* 3. Page Preview (URLscan screenshot) */}
-      <PagePreview urlscan={result.urlscan} />
+      <PagePreview urlscan={result.urlscan} scanId={result.id} />
 
       {/* Action buttons */}
       <div className="flex justify-center gap-3">

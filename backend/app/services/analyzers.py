@@ -631,5 +631,27 @@ async def check_page_content(url: str) -> CheckResult:
 
 
 async def check_urlscan(url: str) -> URLScanResult:
-    """Temporarily disabled — URLscan's async polling adds 8-15s to every scan."""
-    return URLScanResult(available=False)
+    """Submit URL to URLscan.io and return immediately with UUID (no polling)."""
+    if not URLSCAN_API_KEY:
+        return URLScanResult(available=False)
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.post(
+                "https://urlscan.io/api/v1/scan/",
+                headers={"API-Key": URLSCAN_API_KEY, "Content-Type": "application/json"},
+                json={"url": url, "visibility": "public"},
+            )
+            if resp.status_code != 200:
+                return URLScanResult(available=False)
+            uuid = resp.json().get("uuid", "")
+            if not uuid:
+                return URLScanResult(available=False)
+            return URLScanResult(
+                urlscan_uuid=uuid,
+                report_url=f"https://urlscan.io/result/{uuid}/",
+                screenshot_url=f"https://urlscan.io/screenshots/{uuid}.png",
+                available=False,  # not ready yet — frontend will poll
+            )
+    except Exception as e:
+        logger.warning("URLscan submit failed: %s", e)
+        return URLScanResult(available=False)

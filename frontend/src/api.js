@@ -27,6 +27,10 @@ export function getHistory() {
   return request("/api/history");
 }
 
+export function getUrlscanResult(scanId) {
+  return request(`/api/scan/${scanId}/urlscan`);
+}
+
 export function healthCheck() {
   return request("/api/health");
 }

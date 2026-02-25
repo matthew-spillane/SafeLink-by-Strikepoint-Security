@@ -25,6 +25,7 @@ class URLScanResult(BaseModel):
     screenshot_url: Optional[str] = None
     verdict: Optional[str] = None
     report_url: Optional[str] = None
+    urlscan_uuid: Optional[str] = None
     available: bool = True
 
 
