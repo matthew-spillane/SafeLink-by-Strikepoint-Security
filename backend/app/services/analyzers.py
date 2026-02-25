@@ -56,7 +56,7 @@ async def check_virustotal(url: str) -> CheckResult:
         )
     try:
         url_id = hashlib.sha256(url.encode()).hexdigest()
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(timeout=10) as client:
             # Submit URL for scanning
             resp = await client.post(
                 "https://www.virustotal.com/api/v3/urls",
@@ -66,7 +66,7 @@ async def check_virustotal(url: str) -> CheckResult:
             if resp.status_code == 200:
                 analysis_id = resp.json().get("data", {}).get("id", "")
                 # Wait briefly then get results
-                await asyncio.sleep(3)
+                await asyncio.sleep(2)
                 report = await client.get(
                     f"https://www.virustotal.com/api/v3/analyses/{analysis_id}",
                     headers={"x-apikey": VIRUSTOTAL_API_KEY},
@@ -196,7 +196,7 @@ async def check_whois_domain_age(url: str) -> CheckResult:
                 summary="Could not extract domain from URL.",
                 details={},
             )
-        w = await asyncio.to_thread(whois.whois, domain)
+        w = await asyncio.wait_for(asyncio.to_thread(whois.whois, domain), timeout=8)
         creation_date = w.creation_date
         if isinstance(creation_date, list):
             creation_date = creation_date[0]
@@ -316,9 +316,9 @@ async def check_ssl_certificate(url: str) -> CheckResult:
 async def check_redirect_chain(url: str) -> tuple[CheckResult, list[str]]:
     chain = [url]
     try:
-        async with httpx.AsyncClient(follow_redirects=False, timeout=15) as client:
+        async with httpx.AsyncClient(follow_redirects=False, timeout=10) as client:
             current_url = url
-            for _ in range(10):
+            for _ in range(5):
                 resp = await client.get(current_url)
                 if resp.is_redirect:
                     location = str(resp.headers.get("location", ""))
@@ -565,7 +565,7 @@ async def check_url_structure(url: str) -> CheckResult:
 
 async def check_page_content(url: str) -> CheckResult:
     try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
             resp = await client.get(url)
             content = resp.text[:51200]  # first ~50KB
             content_lower = content.lower()
@@ -630,36 +630,32 @@ async def check_page_content(url: str) -> CheckResult:
         )
 
 
-async def _poll_urlscan(url: str) -> URLScanResult:
-    """Submit URL to URLscan.io, poll for results, return screenshot + verdict."""
-    async with httpx.AsyncClient(timeout=20) as client:
-        # Submit scan
-        submit = await client.post(
-            "https://urlscan.io/api/v1/scan/",
-            headers={"API-Key": URLSCAN_API_KEY, "Content-Type": "application/json"},
-            json={"url": url, "visibility": "public"},
-        )
-        if submit.status_code == 429:
-            return URLScanResult(available=False)
-        if submit.status_code != 200:
-            logger.warning("URLscan submit returned %s", submit.status_code)
-            return URLScanResult(available=False)
+async def check_urlscan(url: str) -> URLScanResult:
+    """Submit URL to URLscan.io with strict 10s budget."""
+    if not URLSCAN_API_KEY:
+        return URLScanResult(available=False)
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            submit = await client.post(
+                "https://urlscan.io/api/v1/scan/",
+                headers={"API-Key": URLSCAN_API_KEY, "Content-Type": "application/json"},
+                json={"url": url, "visibility": "public"},
+            )
+            if submit.status_code != 200:
+                return URLScanResult(available=False)
 
-        data = submit.json()
-        uuid = data.get("uuid", "")
-        if not uuid:
-            return URLScanResult(available=False)
+            uuid = submit.json().get("uuid", "")
+            if not uuid:
+                return URLScanResult(available=False)
 
-        report_url = f"https://urlscan.io/result/{uuid}/"
-        screenshot_url = f"https://urlscan.io/screenshots/{uuid}.png"
+            report_url = f"https://urlscan.io/result/{uuid}/"
+            screenshot_url = f"https://urlscan.io/screenshots/{uuid}.png"
 
-        # Poll for results (URLscan is async — returns 404 until ready)
-        for wait in (3, 4, 5):
-            await asyncio.sleep(wait)
+            # One poll attempt after a short wait
+            await asyncio.sleep(3)
             resp = await client.get(f"https://urlscan.io/api/v1/result/{uuid}/")
             if resp.status_code == 200:
-                result = resp.json()
-                verdicts = result.get("verdicts", {}).get("overall", {})
+                verdicts = resp.json().get("verdicts", {}).get("overall", {})
                 malicious = verdicts.get("malicious", False)
                 score = verdicts.get("score", 0)
                 if malicious:
@@ -677,24 +673,13 @@ async def _poll_urlscan(url: str) -> URLScanResult:
                     available=True,
                 )
 
-        # Timed out but we still have the screenshot/report URLs
-        return URLScanResult(
-            screenshot_url=screenshot_url,
-            verdict=None,
-            report_url=report_url,
-            available=True,
-        )
-
-
-async def check_urlscan(url: str) -> URLScanResult:
-    """Wrapper with graceful timeout and error handling."""
-    if not URLSCAN_API_KEY:
-        return URLScanResult(available=False)
-    try:
-        return await asyncio.wait_for(_poll_urlscan(url), timeout=25)
-    except asyncio.TimeoutError:
-        logger.warning("URLscan timed out for %s", url)
-        return URLScanResult(available=False)
+            # Not ready yet — return links without verdict
+            return URLScanResult(
+                screenshot_url=screenshot_url,
+                verdict=None,
+                report_url=report_url,
+                available=True,
+            )
     except Exception as e:
         logger.warning("URLscan check failed: %s", e)
         return URLScanResult(available=False)

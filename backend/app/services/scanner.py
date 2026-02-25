@@ -105,6 +105,26 @@ AI_SYSTEM_PROMPT = (
 )
 
 
+def _call_anthropic_sync(scan_data: dict) -> dict:
+    """Run the synchronous Anthropic SDK call (must be called in a thread)."""
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=300,
+        system=AI_SYSTEM_PROMPT,
+        messages=[
+            {"role": "user", "content": f"Analyze this URL scan:\n{json.dumps(scan_data, indent=2)}"},
+        ],
+    )
+    text = message.content[0].text.strip()
+    # Strip markdown code fences if present
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+        if text.endswith("```"):
+            text = text[:-3].strip()
+    return json.loads(text)
+
+
 async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -> AIVerdict | None:
     if not ANTHROPIC_API_KEY or anthropic is None:
         return None
@@ -114,27 +134,18 @@ async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -
             "risk_score": risk_score,
             "checks": [c.model_dump() for c in checks],
         }
-        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=300,
-            system=AI_SYSTEM_PROMPT,
-            messages=[
-                {"role": "user", "content": f"Analyze this URL scan:\n{json.dumps(scan_data, indent=2)}"},
-            ],
+        result = await asyncio.wait_for(
+            asyncio.to_thread(_call_anthropic_sync, scan_data),
+            timeout=10,
         )
-        text = message.content[0].text.strip()
-        # Strip markdown code fences if present
-        if text.startswith("```"):
-            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-            if text.endswith("```"):
-                text = text[:-3].strip()
-        result = json.loads(text)
         return AIVerdict(
             verdict=result["verdict"],
             confidence=result["confidence"],
             explanation=result["explanation"],
         )
+    except asyncio.TimeoutError:
+        logger.warning("AI verdict timed out")
+        return None
     except Exception as e:
         logger.warning("AI verdict failed: %s", e)
         return None
