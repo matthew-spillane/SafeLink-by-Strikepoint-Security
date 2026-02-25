@@ -9,8 +9,16 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse, unquote
 
 import httpx
-import whois
-from thefuzz import fuzz
+
+try:
+    import whois
+except ImportError:
+    whois = None
+
+try:
+    from thefuzz import fuzz
+except ImportError:
+    fuzz = None
 
 from app.config import VIRUSTOTAL_API_KEY, GOOGLE_SAFE_BROWSING_API_KEY, URLSCAN_API_KEY
 from app.models.schemas import CheckResult, URLScanResult
@@ -170,6 +178,14 @@ async def check_google_safe_browsing(url: str) -> CheckResult:
 
 
 async def check_whois_domain_age(url: str) -> CheckResult:
+    if whois is None:
+        return CheckResult(
+            name="WHOIS / Domain Age",
+            status="skipped",
+            severity="info",
+            summary="WHOIS check unavailable — dependency not installed.",
+            details={"reason": "python-whois not installed"},
+        )
     try:
         domain = urlparse(url).hostname
         if not domain:
@@ -395,6 +411,14 @@ async def check_suspicious_keywords(url: str) -> CheckResult:
 
 
 async def check_lookalike_domain(url: str) -> CheckResult:
+    if fuzz is None:
+        return CheckResult(
+            name="Lookalike Domain",
+            status="skipped",
+            severity="info",
+            summary="Lookalike domain check unavailable — dependency not installed.",
+            details={"reason": "thefuzz not installed"},
+        )
     try:
         hostname = urlparse(url).hostname or ""
         domain_parts = hostname.replace("www.", "").split(".")

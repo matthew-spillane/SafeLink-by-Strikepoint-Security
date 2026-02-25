@@ -1,10 +1,17 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
 from app.routers import scan
 
-Base.metadata.create_all(bind=engine)
+logger = logging.getLogger(__name__)
+
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    logger.error("Failed to initialize database: %s", e)
 
 app = FastAPI(
     title="SafeLink API",

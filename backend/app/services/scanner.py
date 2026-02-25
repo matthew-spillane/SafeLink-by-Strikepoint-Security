@@ -3,8 +3,12 @@ import json
 import logging
 from datetime import datetime, timezone
 
-import anthropic
 from sqlalchemy.orm import Session
+
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
 
 from app.config import ANTHROPIC_API_KEY
 from app.models.scan import Scan
@@ -102,7 +106,7 @@ AI_SYSTEM_PROMPT = (
 
 
 async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -> AIVerdict | None:
-    if not ANTHROPIC_API_KEY:
+    if not ANTHROPIC_API_KEY or anthropic is None:
         return None
     try:
         scan_data = {
