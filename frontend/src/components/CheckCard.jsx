@@ -47,7 +47,7 @@ export default function CheckCard({ check }) {
     <div className="glass-card rounded-xl overflow-hidden animate-fade-in-up">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 p-4 text-left hover:bg-white/5 transition-colors"
+        className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
       >
         <div className={`p-2 rounded-lg ${sc.bg}`}>
           <CheckIcon className={`w-5 h-5 ${sc.color}`} />
@@ -61,17 +61,17 @@ export default function CheckCard({ check }) {
               {check.status}
             </span>
           </div>
-          <p className="text-sm text-gray-400 mt-0.5 truncate">{check.summary}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate">{check.summary}</p>
         </div>
         {expanded ? (
-          <ChevronUp className="w-4 h-4 text-gray-500 shrink-0" />
+          <ChevronUp className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+          <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
         )}
       </button>
       {expanded && check.details && (
-        <div className="px-4 pb-4 border-t border-white/5">
-          <pre className="mt-3 text-xs bg-black/20 dark:bg-black/30 rounded-lg p-3 overflow-x-auto text-gray-300">
+        <div className="px-4 pb-4 border-t border-gray-200 dark:border-white/5">
+          <pre className="mt-3 text-xs bg-gray-100 dark:bg-black/30 rounded-lg p-3 overflow-x-auto text-gray-700 dark:text-gray-300">
             {JSON.stringify(check.details, null, 2)}
           </pre>
         </div>

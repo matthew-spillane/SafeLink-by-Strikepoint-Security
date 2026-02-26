@@ -63,7 +63,7 @@ export default function PagePreview({ urlscan, scanId }) {
       <div className="glass-card rounded-xl p-6 animate-fade-in-up">
         <div className="flex items-center gap-2 mb-4">
           <Monitor className="w-5 h-5 text-blue-400" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
             Page Preview
           </h3>
         </div>
@@ -82,7 +82,7 @@ export default function PagePreview({ urlscan, scanId }) {
       <div className="glass-card rounded-xl p-6 animate-fade-in-up">
         <div className="flex items-center gap-2 mb-4">
           <Monitor className="w-5 h-5 text-blue-400" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
             Page Preview
           </h3>
         </div>
@@ -102,7 +102,7 @@ export default function PagePreview({ urlscan, scanId }) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Monitor className="w-5 h-5 text-blue-400" />
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
               Page Preview
             </h3>
           </div>
@@ -132,10 +132,10 @@ export default function PagePreview({ urlscan, scanId }) {
 
   return (
     <div className="glass-card rounded-xl overflow-hidden animate-fade-in-up">
-      <div className="flex items-center justify-between p-4 border-b border-white/5">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/5">
         <div className="flex items-center gap-2">
           <Monitor className="w-5 h-5 text-blue-400" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
             Page Preview
           </h3>
         </div>
@@ -160,7 +160,7 @@ export default function PagePreview({ urlscan, scanId }) {
         </div>
       </div>
 
-      <div className="bg-black/20">
+      <div className="bg-gray-100 dark:bg-black/20">
         {data.screenshot_url && !imgError ? (
           <img
             src={data.screenshot_url}

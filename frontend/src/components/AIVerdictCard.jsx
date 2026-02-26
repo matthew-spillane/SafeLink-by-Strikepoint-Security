@@ -42,7 +42,7 @@ export default function AIVerdictCard({ aiVerdict }) {
     <div className={`rounded-xl border ${c.border} ${c.bg} p-5 animate-fade-in-up`}>
       <div className="flex items-center gap-2 mb-3">
         <BrainCircuit className="w-5 h-5 text-purple-400" />
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
           AI Analyst Verdict
         </h3>
       </div>
@@ -59,7 +59,7 @@ export default function AIVerdictCard({ aiVerdict }) {
               {aiVerdict.confidence} Confidence
             </span>
           </div>
-          <p className="mt-2 text-sm text-gray-300 leading-relaxed">
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
             {aiVerdict.explanation}
           </p>
         </div>

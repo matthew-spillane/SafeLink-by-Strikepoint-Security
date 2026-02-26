@@ -33,7 +33,7 @@ export default function HistoryPage() {
     return (
       <div className="flex flex-col items-center gap-4 py-24">
         <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-        <p className="text-gray-400 text-sm">Loading scan history...</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Loading scan history...</p>
       </div>
     );
   }
@@ -46,13 +46,13 @@ export default function HistoryPage() {
       </div>
 
       {scans.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-gray-500 dark:text-gray-400">
           <p>No scans yet. Go scan a URL!</p>
         </div>
       ) : (
         <div className="space-y-2">
           {/* Header (desktop) */}
-          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             <div className="col-span-5">URL</div>
             <div className="col-span-3">Time</div>
             <div className="col-span-1 text-center">Score</div>
@@ -74,14 +74,14 @@ export default function HistoryPage() {
                 onClick={() => navigate(`/scan/${scan.id}`)}
                 className={`w-full glass-card rounded-xl border-l-4 ${
                   rowBorder[scan.verdict] || "border-l-gray-500"
-                } hover:bg-white/5 transition-colors text-left`}
+                } hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-left`}
               >
                 {/* Desktop */}
                 <div className="hidden sm:grid grid-cols-12 gap-4 items-center px-4 py-3">
                   <div className="col-span-5 truncate font-mono text-sm" title={scan.url}>
                     {hostname}
                   </div>
-                  <div className="col-span-3 text-sm text-gray-400">{time}</div>
+                  <div className="col-span-3 text-sm text-gray-500 dark:text-gray-400">{time}</div>
                   <div className="col-span-1 text-center font-bold">{scan.risk_score}</div>
                   <div className="col-span-2 flex justify-center">
                     <span
@@ -110,7 +110,7 @@ export default function HistoryPage() {
                       {scan.verdict}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-400">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>{time}</span>
                     <span className="font-bold">Score: {scan.risk_score}</span>
                   </div>

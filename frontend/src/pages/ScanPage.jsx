@@ -23,7 +23,7 @@ export default function ScanPage() {
     return (
       <div className="flex flex-col items-center gap-4 py-24">
         <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-        <p className="text-gray-400 text-sm">Loading scan results...</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Loading scan results...</p>
       </div>
     );
   }

@@ -26,7 +26,7 @@ export default function RedirectChain({ chain }) {
                     ? "bg-blue-500/10 border-blue-500/30 text-blue-300"
                     : i === chain.length - 1
                     ? "bg-green-500/10 border-green-500/30 text-green-300"
-                    : "bg-white/5 border-white/10 text-gray-300"
+                    : "bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300"
                 }`}
                 title={url}
               >

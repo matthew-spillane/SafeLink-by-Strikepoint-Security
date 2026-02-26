@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Shield, Loader2 } from "lucide-react";
 import ScanInput from "../components/ScanInput";
 import ResultsDashboard from "../components/ResultsDashboard";
@@ -11,6 +11,13 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [recentScans, setRecentScans] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Reset results when user navigates to home (e.g. clicking Home/logo)
+  useEffect(() => {
+    setResult(null);
+    setError("");
+  }, [location.key]);
 
   useEffect(() => {
     getHistory()
@@ -63,7 +70,7 @@ export default function HomePage() {
               SafeLink
             </span>
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
             Detect phishing URLs instantly
           </p>
         </div>
@@ -81,7 +88,7 @@ export default function HomePage() {
             <div className="w-16 h-16 rounded-full border-4 border-blue-500/20 animate-pulse-ring" />
             <Loader2 className="w-8 h-8 text-blue-500 animate-spin absolute top-4 left-4" />
           </div>
-          <p className="text-gray-400 text-sm">Analyzing URL across 10 security checks...</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Analyzing URL across 10 security checks...</p>
         </div>
       )}
 
@@ -100,7 +107,7 @@ export default function HomePage() {
       {/* Recent scans */}
       {!result && !loading && recentScans.length > 0 && (
         <div className="mt-12 animate-fade-in-up">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 text-center">
+          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 text-center">
             Recent Scans
           </h3>
           <div className="flex flex-wrap justify-center gap-2">

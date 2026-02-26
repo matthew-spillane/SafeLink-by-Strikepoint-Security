@@ -17,7 +17,7 @@ export default function Header() {
     `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
       location.pathname === path
         ? "bg-blue-600 text-white"
-        : "text-gray-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10"
+        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10"
     }`;
 
   return (
@@ -45,7 +45,7 @@ export default function Header() {
           </a>
           <button
             onClick={toggle}
-            className="ml-2 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="ml-2 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
             aria-label="Toggle theme"
           >
             {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}

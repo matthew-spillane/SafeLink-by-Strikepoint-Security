@@ -31,6 +31,11 @@ body {
   color: #e2e8f0;
 }
 
+.light body, body.light {
+  background-color: #ffffff;
+  color: #1a202c;
+}
+
 /* Glass card */
 .glass-card {
   background: var(--color-glass);

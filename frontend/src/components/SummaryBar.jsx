@@ -23,7 +23,7 @@ export default function SummaryBar({ checks }) {
         >
           <item.Icon className={`w-5 h-5 ${item.color}`} />
           <span className="text-xl font-bold">{item.count}</span>
-          <span className="text-xs text-gray-400">{item.label}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{item.label}</span>
         </div>
       ))}
     </div>
