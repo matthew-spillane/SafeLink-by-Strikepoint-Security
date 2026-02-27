@@ -20,9 +20,9 @@ import {
 
 const statusConfig = {
   pass: { color: "text-green-400", bg: "bg-green-500/10", Icon: CheckCircle2 },
-  warning: { color: "text-yellow-400", bg: "bg-yellow-500/10", Icon: AlertTriangle },
-  fail: { color: "text-red-400", bg: "bg-red-500/10", Icon: XCircle },
-  skipped: { color: "text-gray-400", bg: "bg-gray-500/10", Icon: MinusCircle },
+  warning: { color: "text-gray-300", bg: "bg-white/5", Icon: AlertTriangle },
+  fail: { color: "text-sp-red", bg: "bg-sp-red/10", Icon: XCircle },
+  skipped: { color: "text-sp-muted", bg: "bg-white/5", Icon: MinusCircle },
 };
 
 const iconMap = {
@@ -47,31 +47,31 @@ export default function CheckCard({ check }) {
     <div className="glass-card rounded-xl overflow-hidden animate-fade-in-up">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+        className="w-full flex items-center gap-3 p-4 text-left hover:bg-sp-card-light transition-colors"
       >
         <div className={`p-2 rounded-lg ${sc.bg}`}>
           <CheckIcon className={`w-5 h-5 ${sc.color}`} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">{check.name}</span>
+            <span className="font-medium text-sm text-white">{check.name}</span>
             <span
               className={`text-xs px-2 py-0.5 rounded-full font-medium ${sc.bg} ${sc.color}`}
             >
               {check.status}
             </span>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate">{check.summary}</p>
+          <p className="text-sm text-sp-text mt-0.5 truncate">{check.summary}</p>
         </div>
         {expanded ? (
-          <ChevronUp className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
+          <ChevronUp className="w-4 h-4 text-sp-muted shrink-0" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
+          <ChevronDown className="w-4 h-4 text-sp-muted shrink-0" />
         )}
       </button>
       {expanded && check.details && (
-        <div className="px-4 pb-4 border-t border-gray-200 dark:border-white/5">
-          <pre className="mt-3 text-xs bg-gray-100 dark:bg-black/30 rounded-lg p-3 overflow-x-auto text-gray-700 dark:text-gray-300">
+        <div className="px-4 pb-4 border-t border-sp-border">
+          <pre className="mt-3 text-xs bg-black/30 rounded-lg p-3 overflow-x-auto text-gray-300">
             {JSON.stringify(check.details, null, 2)}
           </pre>
         </div>

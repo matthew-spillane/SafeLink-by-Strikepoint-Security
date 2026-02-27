@@ -3,8 +3,7 @@ import React, { useEffect, useState } from "react";
 function getColor(score) {
   if (score <= 25) return "#22c55e";
   if (score <= 50) return "#eab308";
-  if (score <= 75) return "#f97316";
-  return "#ef4444";
+  return "#e8412a";
 }
 
 export default function RiskGauge({ score }) {
@@ -37,9 +36,8 @@ export default function RiskGauge({ score }) {
         <path
           d="M 10 110 A 80 80 0 0 1 190 110"
           fill="none"
-          stroke="currentColor"
+          stroke="#2a2a2a"
           strokeWidth={stroke}
-          className="text-gray-200 dark:text-white/10"
           strokeLinecap="round"
         />
         {/* Score arc */}
@@ -58,7 +56,7 @@ export default function RiskGauge({ score }) {
           x="100"
           y="95"
           textAnchor="middle"
-          className="fill-current"
+          fill="white"
           style={{ fontSize: "36px", fontWeight: 700 }}
         >
           {animated}
@@ -67,7 +65,7 @@ export default function RiskGauge({ score }) {
           x="100"
           y="112"
           textAnchor="middle"
-          className="fill-current opacity-50"
+          fill="#666666"
           style={{ fontSize: "11px" }}
         >
           / 100

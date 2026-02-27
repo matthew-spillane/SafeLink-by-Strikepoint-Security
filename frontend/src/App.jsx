@@ -9,7 +9,7 @@ import HistoryPage from "./pages/HistoryPage";
 export default function App() {
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-white dark:bg-navy-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      <div className="min-h-screen bg-sp-bg text-sp-text">
         <Header />
         <main className="max-w-5xl mx-auto px-4 pb-16">
           <Routes>

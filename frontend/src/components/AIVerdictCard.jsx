@@ -3,31 +3,23 @@ import { BrainCircuit, ShieldCheck, AlertTriangle, ShieldAlert, ShieldX } from "
 
 const verdictConfig = {
   Safe: {
-    bg: "bg-green-500/10",
-    border: "border-green-500/30",
     text: "text-green-400",
-    badgeBg: "bg-green-500/20",
+    badgeBg: "bg-green-500/10",
     Icon: ShieldCheck,
   },
   Suspicious: {
-    bg: "bg-yellow-500/10",
-    border: "border-yellow-500/30",
-    text: "text-yellow-400",
-    badgeBg: "bg-yellow-500/20",
+    text: "text-sp-red",
+    badgeBg: "bg-sp-red/10",
     Icon: AlertTriangle,
   },
   "Likely Phishing": {
-    bg: "bg-orange-500/10",
-    border: "border-orange-500/30",
-    text: "text-orange-400",
-    badgeBg: "bg-orange-500/20",
+    text: "text-sp-red",
+    badgeBg: "bg-sp-red/10",
     Icon: ShieldAlert,
   },
   Phishing: {
-    bg: "bg-red-500/10",
-    border: "border-red-500/30",
-    text: "text-red-400",
-    badgeBg: "bg-red-500/20",
+    text: "text-sp-red",
+    badgeBg: "bg-sp-red/10",
     Icon: ShieldX,
   },
 };
@@ -39,10 +31,10 @@ export default function AIVerdictCard({ aiVerdict }) {
   const VerdictIcon = c.Icon;
 
   return (
-    <div className={`rounded-xl border ${c.border} ${c.bg} p-5 animate-fade-in-up`}>
+    <div className="rounded-xl border border-sp-border bg-sp-card p-5 animate-fade-in-up">
       <div className="flex items-center gap-2 mb-3">
-        <BrainCircuit className="w-5 h-5 text-purple-400" />
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+        <BrainCircuit className="w-5 h-5 text-sp-red" />
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-sp-red">
           AI Analyst Verdict
         </h3>
       </div>
@@ -59,7 +51,7 @@ export default function AIVerdictCard({ aiVerdict }) {
               {aiVerdict.confidence} Confidence
             </span>
           </div>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+          <p className="mt-2 text-sm text-sp-text leading-relaxed">
             {aiVerdict.explanation}
           </p>
         </div>

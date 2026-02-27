@@ -9,9 +9,9 @@ export default function SummaryBar({ checks }) {
 
   const items = [
     { label: "Passed", count: passed, color: "text-green-400", Icon: CheckCircle2 },
-    { label: "Warnings", count: warnings, color: "text-yellow-400", Icon: AlertTriangle },
-    { label: "Failed", count: failed, color: "text-red-400", Icon: XCircle },
-    { label: "Skipped", count: skipped, color: "text-gray-400", Icon: MinusCircle },
+    { label: "Warnings", count: warnings, color: "text-gray-300", Icon: AlertTriangle },
+    { label: "Failed", count: failed, color: "text-sp-red", Icon: XCircle },
+    { label: "Skipped", count: skipped, color: "text-sp-muted", Icon: MinusCircle },
   ];
 
   return (
@@ -22,8 +22,8 @@ export default function SummaryBar({ checks }) {
           className="glass-card rounded-xl p-3 flex flex-col items-center gap-1"
         >
           <item.Icon className={`w-5 h-5 ${item.color}`} />
-          <span className="text-xl font-bold">{item.count}</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{item.label}</span>
+          <span className="text-xl font-bold text-white">{item.count}</span>
+          <span className="text-xs text-sp-text">{item.label}</span>
         </div>
       ))}
     </div>

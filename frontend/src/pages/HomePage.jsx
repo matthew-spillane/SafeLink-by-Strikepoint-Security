@@ -50,9 +50,9 @@ export default function HomePage() {
 
   const verdictColor = {
     Safe: "bg-green-500/10 text-green-400 border-green-500/30",
-    Suspicious: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-    "Likely Phishing": "bg-orange-500/10 text-orange-400 border-orange-500/30",
-    Phishing: "bg-red-500/10 text-red-400 border-red-500/30",
+    Suspicious: "bg-sp-red/10 text-sp-red border-sp-red/30",
+    "Likely Phishing": "bg-sp-red/10 text-sp-red border-sp-red/30",
+    Phishing: "bg-sp-red/10 text-sp-red border-sp-red/30",
   };
 
   return (
@@ -61,17 +61,15 @@ export default function HomePage() {
       {!result && (
         <div className="text-center mb-10 animate-fade-in-up">
           <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-2xl bg-blue-500/10">
-              <Shield className="w-12 h-12 text-blue-500" />
+            <div className="p-3 rounded-2xl bg-sp-red/10">
+              <Shield className="w-12 h-12 text-sp-red" />
             </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-              SafeLink
-            </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold mb-2 text-white">
+            SafeLink
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-lg">
-            Detect phishing URLs instantly
+          <p className="text-sp-text text-lg">
+            Enterprise-grade phishing URL detection
           </p>
         </div>
       )}
@@ -85,16 +83,16 @@ export default function HomePage() {
       {loading && (
         <div className="flex flex-col items-center gap-4 py-16 animate-fade-in-up">
           <div className="relative">
-            <div className="w-16 h-16 rounded-full border-4 border-blue-500/20 animate-pulse-ring" />
-            <Loader2 className="w-8 h-8 text-blue-500 animate-spin absolute top-4 left-4" />
+            <div className="w-16 h-16 rounded-full border-4 border-sp-red/20 animate-pulse-ring" />
+            <Loader2 className="w-8 h-8 text-sp-red animate-spin absolute top-4 left-4" />
           </div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Analyzing URL across 10 security checks...</p>
+          <p className="text-sp-text text-sm">Analyzing URL across 10 security checks...</p>
         </div>
       )}
 
       {/* Error */}
       {error && !loading && (
-        <div className="max-w-md mx-auto p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center animate-fade-in-up">
+        <div className="max-w-md mx-auto p-4 rounded-xl bg-sp-red/10 border border-sp-red/30 text-sp-red text-sm text-center animate-fade-in-up">
           {error}
         </div>
       )}
@@ -107,7 +105,7 @@ export default function HomePage() {
       {/* Recent scans */}
       {!result && !loading && recentScans.length > 0 && (
         <div className="mt-12 animate-fade-in-up">
-          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 text-center">
+          <h3 className="text-sm font-semibold text-sp-red uppercase tracking-wider mb-3 text-center">
             Recent Scans
           </h3>
           <div className="flex flex-wrap justify-center gap-2">

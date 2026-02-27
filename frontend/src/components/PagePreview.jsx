@@ -4,9 +4,9 @@ import { getUrlscanResult } from "../api";
 
 const verdictConfig = {
   Clean: { bg: "bg-green-500/20", text: "text-green-400", Icon: ShieldCheck },
-  "Potentially Suspicious": { bg: "bg-yellow-500/20", text: "text-yellow-400", Icon: ShieldAlert },
-  Suspicious: { bg: "bg-orange-500/20", text: "text-orange-400", Icon: ShieldAlert },
-  Malicious: { bg: "bg-red-500/20", text: "text-red-400", Icon: ShieldAlert },
+  "Potentially Suspicious": { bg: "bg-sp-red/20", text: "text-sp-red", Icon: ShieldAlert },
+  Suspicious: { bg: "bg-sp-red/20", text: "text-sp-red", Icon: ShieldAlert },
+  Malicious: { bg: "bg-sp-red/20", text: "text-sp-red", Icon: ShieldAlert },
 };
 
 export default function PagePreview({ urlscan, scanId }) {
@@ -62,15 +62,15 @@ export default function PagePreview({ urlscan, scanId }) {
     return (
       <div className="glass-card rounded-xl p-6 animate-fade-in-up">
         <div className="flex items-center gap-2 mb-4">
-          <Monitor className="w-5 h-5 text-blue-400" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+          <Monitor className="w-5 h-5 text-sp-red" />
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-sp-red">
             Page Preview
           </h3>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+        <div className="flex flex-col items-center justify-center py-12 text-sp-muted">
           <ImageOff className="w-10 h-10 mb-3 opacity-50" />
           <p className="text-sm">Preview unavailable</p>
-          <p className="text-xs mt-1 text-gray-600">URLscan.io API key not configured</p>
+          <p className="text-xs mt-1 text-sp-muted">URLscan.io API key not configured</p>
         </div>
       </div>
     );
@@ -81,15 +81,15 @@ export default function PagePreview({ urlscan, scanId }) {
     return (
       <div className="glass-card rounded-xl p-6 animate-fade-in-up">
         <div className="flex items-center gap-2 mb-4">
-          <Monitor className="w-5 h-5 text-blue-400" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+          <Monitor className="w-5 h-5 text-sp-red" />
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-sp-red">
             Page Preview
           </h3>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-12 text-sp-text">
           <Loader2 className="w-8 h-8 mb-3 animate-spin opacity-60" />
           <p className="text-sm">Loading preview...</p>
-          <p className="text-xs mt-1 text-gray-600">URLscan.io is capturing this page</p>
+          <p className="text-xs mt-1 text-sp-muted">URLscan.io is capturing this page</p>
         </div>
       </div>
     );
@@ -101,8 +101,8 @@ export default function PagePreview({ urlscan, scanId }) {
       <div className="glass-card rounded-xl p-6 animate-fade-in-up">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Monitor className="w-5 h-5 text-blue-400" />
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+            <Monitor className="w-5 h-5 text-sp-red" />
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-sp-red">
               Page Preview
             </h3>
           </div>
@@ -111,17 +111,17 @@ export default function PagePreview({ urlscan, scanId }) {
               href={data.report_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-sp-red hover:bg-sp-red-hover text-white transition-colors"
             >
               View Full Report
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+        <div className="flex flex-col items-center justify-center py-12 text-sp-muted">
           <ImageOff className="w-10 h-10 mb-3 opacity-50" />
           <p className="text-sm">Preview not yet available</p>
-          <p className="text-xs mt-1 text-gray-600">URLscan.io is still processing — check the report link</p>
+          <p className="text-xs mt-1 text-sp-muted">URLscan.io is still processing — check the report link</p>
         </div>
       </div>
     );
@@ -132,10 +132,10 @@ export default function PagePreview({ urlscan, scanId }) {
 
   return (
     <div className="glass-card rounded-xl overflow-hidden animate-fade-in-up">
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/5">
+      <div className="flex items-center justify-between p-4 border-b border-sp-border">
         <div className="flex items-center gap-2">
-          <Monitor className="w-5 h-5 text-blue-400" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+          <Monitor className="w-5 h-5 text-sp-red" />
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-sp-red">
             Page Preview
           </h3>
         </div>
@@ -151,7 +151,7 @@ export default function PagePreview({ urlscan, scanId }) {
               href={data.report_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-sp-red hover:bg-sp-red-hover text-white transition-colors"
             >
               View Full Report
               <ExternalLink className="w-3.5 h-3.5" />
@@ -160,7 +160,7 @@ export default function PagePreview({ urlscan, scanId }) {
         </div>
       </div>
 
-      <div className="bg-gray-100 dark:bg-black/20">
+      <div className="bg-black/20">
         {data.screenshot_url && !imgError ? (
           <img
             src={data.screenshot_url}
@@ -169,7 +169,7 @@ export default function PagePreview({ urlscan, scanId }) {
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+          <div className="flex flex-col items-center justify-center py-16 text-sp-muted">
             <ImageOff className="w-10 h-10 mb-3 opacity-50" />
             <p className="text-sm">Screenshot unavailable</p>
           </div>

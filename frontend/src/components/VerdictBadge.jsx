@@ -8,18 +8,18 @@ const config = {
     Icon: ShieldCheck,
   },
   Suspicious: {
-    bg: "bg-yellow-500/10 border-yellow-500/30",
-    text: "text-yellow-400",
+    bg: "bg-sp-red/10 border-sp-red/30",
+    text: "text-sp-red",
     Icon: AlertTriangle,
   },
   "Likely Phishing": {
-    bg: "bg-orange-500/10 border-orange-500/30",
-    text: "text-orange-400",
+    bg: "bg-sp-red/10 border-sp-red/30",
+    text: "text-sp-red",
     Icon: ShieldAlert,
   },
   Phishing: {
-    bg: "bg-red-500/10 border-red-500/30",
-    text: "text-red-400",
+    bg: "bg-sp-red/10 border-sp-red/30",
+    text: "text-sp-red",
     Icon: ShieldX,
   },
 };

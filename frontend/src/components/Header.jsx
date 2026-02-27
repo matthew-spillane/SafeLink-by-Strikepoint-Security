@@ -1,10 +1,8 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Shield, Sun, Moon, History, Home } from "lucide-react";
-import { useTheme } from "../context/ThemeContext";
+import { Shield, Home, History } from "lucide-react";
 
 export default function Header() {
-  const { dark, toggle } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -16,22 +14,20 @@ export default function Header() {
   const linkClass = (path) =>
     `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
       location.pathname === path
-        ? "bg-blue-600 text-white"
-        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10"
+        ? "text-white bg-white/10"
+        : "text-sp-text hover:text-white hover:bg-white/5"
     }`;
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-navy-900/80 border-b border-gray-200 dark:border-white/10">
+    <header className="sticky top-0 z-50 bg-sp-bg/90 backdrop-blur-xl border-b border-sp-border">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         <a
           href="/"
           onClick={navTo("/")}
-          className="flex items-center gap-2 font-bold text-lg cursor-pointer"
+          className="flex items-center gap-2.5 cursor-pointer"
         >
-          <Shield className="w-6 h-6 text-blue-500" />
-          <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-            SafeLink
-          </span>
+          <Shield className="w-6 h-6 text-sp-red" />
+          <span className="font-bold text-lg text-white tracking-tight">SafeLink</span>
         </a>
 
         <nav className="flex items-center gap-2">
@@ -44,11 +40,10 @@ export default function Header() {
             <span className="hidden sm:inline">History</span>
           </a>
           <button
-            onClick={toggle}
-            className="ml-2 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
-            aria-label="Toggle theme"
+            onClick={() => navigate("/")}
+            className="ml-2 px-4 py-1.5 bg-sp-red hover:bg-sp-red-hover text-white text-sm font-semibold rounded-lg transition-colors"
           >
-            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            New Scan
           </button>
         </nav>
       </div>

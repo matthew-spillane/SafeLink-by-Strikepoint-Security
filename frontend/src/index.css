@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
-/* Use class-based dark mode (.dark on <html>) instead of prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-navy-900: #0a0e1a;
-  --color-navy-800: #111827;
-  --color-navy-700: #1e293b;
-  --color-navy-600: #334155;
-  --color-navy-500: #475569;
-  --color-glass: rgba(255, 255, 255, 0.05);
-  --color-glass-border: rgba(255, 255, 255, 0.1);
-  --color-glass-light: rgba(0, 0, 0, 0.05);
-  --color-glass-border-light: rgba(0, 0, 0, 0.1);
+  /* Strikepoint Security brand palette */
+  --color-sp-bg: #0a0a0a;
+  --color-sp-card: #111111;
+  --color-sp-card-light: #1a1a1a;
+  --color-sp-border: #2a2a2a;
+  --color-sp-red: #e8412a;
+  --color-sp-red-hover: #d13a25;
+  --color-sp-text: #a0a0a0;
+  --color-sp-muted: #666666;
+
+  /* Risk gauge colors */
   --color-risk-safe: #22c55e;
-  --color-risk-suspicious: #eab308;
-  --color-risk-likely: #f97316;
-  --color-risk-phishing: #ef4444;
+  --color-risk-medium: #eab308;
+  --color-risk-high: #e8412a;
 }
 
 body {
@@ -24,28 +24,14 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-sp-bg);
+  color: var(--color-sp-text);
 }
 
-.dark body, body.dark {
-  background-color: var(--color-navy-900);
-  color: #e2e8f0;
-}
-
-.light body, body.light {
-  background-color: #ffffff;
-  color: #1a202c;
-}
-
-/* Glass card */
+/* Card */
 .glass-card {
-  background: var(--color-glass);
-  border: 1px solid var(--color-glass-border);
-  backdrop-filter: blur(12px);
-}
-
-.light .glass-card {
-  background: var(--color-glass-light);
-  border: 1px solid var(--color-glass-border-light);
+  background: var(--color-sp-card);
+  border: 1px solid var(--color-sp-border);
 }
 
 /* Fade in animation */
