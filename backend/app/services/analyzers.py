@@ -1,10 +1,9 @@
 import asyncio
-import hashlib
+import base64
 import logging
 import re
 import socket
 import ssl
-import struct
 from datetime import datetime, timezone
 from urllib.parse import urlparse, unquote
 
@@ -45,6 +44,54 @@ ABUSED_PROVIDERS = [
 UNCOMMON_TLDS = [".xyz", ".top", ".click", ".tk", ".ml", ".ga", ".cf", ".gq", ".buzz", ".icu"]
 
 
+def _normalize_url_for_vt(url: str) -> str:
+    """Normalize a URL for consistent VirusTotal lookups.
+
+    Ensures bare-domain URLs have a trailing slash so that
+    ``https://example.com`` and ``https://example.com/`` resolve to the
+    same VirusTotal report.
+    """
+    parsed = urlparse(url)
+    path = parsed.path or "/"
+    normalized = f"{parsed.scheme}://{parsed.netloc}{path}"
+    if parsed.query:
+        normalized += f"?{parsed.query}"
+    if parsed.fragment:
+        normalized += f"#{parsed.fragment}"
+    return normalized
+
+
+def _vt_url_id(url: str) -> str:
+    """Compute VirusTotal's URL identifier (base64url without padding)."""
+    return base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
+
+
+def _build_vt_result(stats: dict) -> CheckResult:
+    """Build a CheckResult from VirusTotal analysis statistics."""
+    malicious = stats.get("malicious", 0)
+    suspicious = stats.get("suspicious", 0)
+    harmless = stats.get("harmless", 0)
+    undetected = stats.get("undetected", 0)
+    total = malicious + suspicious + harmless + undetected
+    flagged = malicious + suspicious
+
+    if flagged > 0:
+        return CheckResult(
+            name="VirusTotal",
+            status="fail",
+            severity="high",
+            summary=f"{flagged} of {total} engines flagged this URL as malicious or suspicious.",
+            details=stats,
+        )
+    return CheckResult(
+        name="VirusTotal",
+        status="pass",
+        severity="low",
+        summary=f"0 of {total} engines flagged this URL.",
+        details=stats,
+    )
+
+
 async def check_virustotal(url: str) -> CheckResult:
     if not VIRUSTOTAL_API_KEY:
         return CheckResult(
@@ -55,52 +102,70 @@ async def check_virustotal(url: str) -> CheckResult:
             details={"reason": "VIRUSTOTAL_API_KEY not set"},
         )
     try:
-        url_id = hashlib.sha256(url.encode()).hexdigest()
-        async with httpx.AsyncClient(timeout=5) as client:
-            # Submit URL for scanning
-            resp = await client.post(
-                "https://www.virustotal.com/api/v3/urls",
-                headers={"x-apikey": VIRUSTOTAL_API_KEY},
-                data={"url": url},
+        normalized = _normalize_url_for_vt(url)
+        url_id = _vt_url_id(normalized)
+        headers = {"x-apikey": VIRUSTOTAL_API_KEY}
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            # --- Step 1: check for an existing report ---
+            resp = await client.get(
+                f"https://www.virustotal.com/api/v3/urls/{url_id}",
+                headers=headers,
             )
             if resp.status_code == 200:
-                analysis_id = resp.json().get("data", {}).get("id", "")
-                # Wait briefly then get results
-                await asyncio.sleep(1)
+                stats = (
+                    resp.json()
+                    .get("data", {})
+                    .get("attributes", {})
+                    .get("last_analysis_stats", {})
+                )
+                if stats:
+                    return _build_vt_result(stats)
+
+            # --- Step 2: no cached report — submit a fresh scan ---
+            submit = await client.post(
+                "https://www.virustotal.com/api/v3/urls",
+                headers=headers,
+                data={"url": normalized},
+            )
+            if submit.status_code != 200:
+                return CheckResult(
+                    name="VirusTotal",
+                    status="warning",
+                    severity="medium",
+                    summary="VirusTotal returned an unexpected response.",
+                    details={"status_code": submit.status_code},
+                )
+
+            analysis_id = submit.json().get("data", {}).get("id", "")
+            if not analysis_id:
+                return CheckResult(
+                    name="VirusTotal",
+                    status="warning",
+                    severity="medium",
+                    summary="VirusTotal did not return an analysis ID.",
+                    details={},
+                )
+
+            # --- Step 3: poll until the analysis completes ---
+            for delay in (3, 5, 8):
+                await asyncio.sleep(delay)
                 report = await client.get(
                     f"https://www.virustotal.com/api/v3/analyses/{analysis_id}",
-                    headers={"x-apikey": VIRUSTOTAL_API_KEY},
+                    headers=headers,
                 )
                 if report.status_code == 200:
-                    stats = report.json().get("data", {}).get("attributes", {}).get("stats", {})
-                    malicious = stats.get("malicious", 0)
-                    suspicious = stats.get("suspicious", 0)
-                    harmless = stats.get("harmless", 0)
-                    undetected = stats.get("undetected", 0)
-                    total = malicious + suspicious + harmless + undetected
-                    flagged = malicious + suspicious
+                    attrs = report.json().get("data", {}).get("attributes", {})
+                    if attrs.get("status") == "completed":
+                        return _build_vt_result(attrs.get("stats", {}))
 
-                    if flagged > 0:
-                        return CheckResult(
-                            name="VirusTotal",
-                            status="fail",
-                            severity="high",
-                            summary=f"{flagged} of {total} engines flagged this URL as malicious or suspicious.",
-                            details=stats,
-                        )
-                    return CheckResult(
-                        name="VirusTotal",
-                        status="pass",
-                        severity="low",
-                        summary=f"0 of {total} engines flagged this URL.",
-                        details=stats,
-                    )
+            # Analysis still running — return a warning rather than silence
             return CheckResult(
                 name="VirusTotal",
                 status="warning",
                 severity="medium",
-                summary="VirusTotal returned an unexpected response.",
-                details={"status_code": resp.status_code},
+                summary="VirusTotal scan is still processing — results may be incomplete.",
+                details={"analysis_id": analysis_id},
             )
     except Exception as e:
         return CheckResult(
