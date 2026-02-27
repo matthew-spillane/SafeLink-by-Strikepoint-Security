@@ -91,15 +91,74 @@ def get_verdict(score: int) -> tuple[str, str]:
     return "Phishing", "red"
 
 
+# Points added to risk score based on AI verdict, scaled by confidence
+_AI_VERDICT_POINTS: dict[str, int] = {
+    "Phishing": 45,
+    "Likely Phishing": 35,
+    "Suspicious": 25,
+    "Safe": 0,
+}
+_CONFIDENCE_MULTIPLIER: dict[str, float] = {
+    "High": 1.0,
+    "Medium": 0.75,
+    "Low": 0.5,
+}
+
+
+def apply_ai_score(base_score: int, ai_verdict: "AIVerdict") -> int:
+    """Blend AI verdict into the numerical risk score."""
+    points = _AI_VERDICT_POINTS.get(ai_verdict.verdict, 0)
+    multiplier = _CONFIDENCE_MULTIPLIER.get(ai_verdict.confidence, 0.75)
+    return min(100, base_score + int(points * multiplier))
+
+
+def _rule_based_verdict(risk_score: int) -> "AIVerdict":
+    """Fallback verdict when the Anthropic API is unavailable or times out."""
+    if risk_score <= 25:
+        verdict = "Safe"
+        explanation = (
+            "No significant threats were detected across all automated checks. "
+            "The URL appears legitimate based on available signals, but always "
+            "exercise caution when entering personal information online."
+        )
+    elif risk_score <= 50:
+        verdict = "Suspicious"
+        explanation = (
+            "Some indicators of concern were detected. Exercise caution before "
+            "providing any personal information — verify the site is genuine "
+            "through an independent search."
+        )
+    elif risk_score <= 75:
+        verdict = "Likely Phishing"
+        explanation = (
+            "Multiple risk signals suggest this URL may be a phishing attempt. "
+            "Avoid entering credentials or personal data. If you were directed "
+            "here from an email or message, treat it as suspicious."
+        )
+    else:
+        verdict = "Phishing"
+        explanation = (
+            "Strong indicators of phishing were detected. This URL is very "
+            "likely malicious — do not click, enter information, or interact "
+            "with this site."
+        )
+    return AIVerdict(verdict=verdict, confidence="Medium", explanation=explanation)
+
+
 logger = logging.getLogger(__name__)
 
 AI_SYSTEM_PROMPT = (
-    "You are a senior cybersecurity threat analyst. Analyze the following URL "
-    "scan results and make an independent judgment about phishing likelihood. "
-    "Look holistically at all signals — URL structure, domain name, keywords, "
-    "age, SSL, redirects. Explicitly call out brand impersonation patterns even "
-    "if reputation APIs return clean results. Return a JSON object with three "
-    "fields: verdict (one of: Safe, Suspicious, Likely Phishing, Phishing), "
+    "You are a senior cybersecurity threat analyst specializing in phishing URL detection. "
+    "Analyze the URL and scan results provided, making an independent judgment "
+    "about phishing likelihood. "
+    "Always examine the raw URL itself carefully: look for brand impersonation, "
+    "typosquatting (e.g. 'paypa1.com'), suspicious subdomains (e.g. 'paypal.com.evil.net'), "
+    "deceptive URL paths, lookalike characters, and unusual TLDs. "
+    "Explicitly flag these patterns even when all reputation API checks return clean results — "
+    "a URL can be newly registered and not yet blacklisted while still being malicious. "
+    "You MUST always return a verdict for every URL. "
+    "Return ONLY a JSON object with exactly three fields: "
+    "verdict (one of: Safe, Suspicious, Likely Phishing, Phishing), "
     "confidence (Low, Medium, or High), and explanation (2-3 sentences in plain "
     "English suitable for non-technical users)."
 )
@@ -125,9 +184,10 @@ def _call_anthropic_sync(scan_data: dict) -> dict:
     return json.loads(text)
 
 
-async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -> AIVerdict | None:
+async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -> AIVerdict:
+    """Always returns an AIVerdict — falls back to rule-based when API is unavailable."""
     if not ANTHROPIC_API_KEY or anthropic is None:
-        return None
+        return _rule_based_verdict(risk_score)
     try:
         scan_data = {
             "url": url,
@@ -144,11 +204,11 @@ async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -
             explanation=result["explanation"],
         )
     except asyncio.TimeoutError:
-        logger.warning("AI verdict timed out")
-        return None
+        logger.warning("AI verdict timed out, using rule-based fallback")
+        return _rule_based_verdict(risk_score)
     except Exception as e:
-        logger.warning("AI verdict failed: %s", e)
-        return None
+        logger.warning("AI verdict failed: %s, using rule-based fallback", e)
+        return _rule_based_verdict(risk_score)
 
 
 async def run_scan(url: str, db: Session) -> ScanResponse:
@@ -180,19 +240,21 @@ async def run_scan(url: str, db: Session) -> ScanResponse:
         else:
             checks.append(r)
 
-    risk_score = calculate_risk_score(checks)
-    verdict, verdict_color = get_verdict(risk_score)
+    base_score = calculate_risk_score(checks)
 
-    # Get AI analyst verdict
-    ai_verdict = await get_ai_verdict(url, checks, risk_score)
+    # Get AI analyst verdict based on checks + base score
+    ai_verdict = await get_ai_verdict(url, checks, base_score)
+
+    # Blend AI verdict contribution into the final risk score
+    risk_score = apply_ai_score(base_score, ai_verdict)
+    verdict, verdict_color = get_verdict(risk_score)
 
     # Save to database
     results_data = {
         "checks": [c.model_dump() for c in checks],
         "redirect_chain": redirect_chain,
+        "ai_verdict": ai_verdict.model_dump(),
     }
-    if ai_verdict:
-        results_data["ai_verdict"] = ai_verdict.model_dump()
     if urlscan_result:
         results_data["urlscan"] = urlscan_result.model_dump()
 
