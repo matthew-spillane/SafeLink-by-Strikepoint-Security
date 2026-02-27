@@ -103,13 +103,29 @@ _CONFIDENCE_MULTIPLIER: dict[str, float] = {
     "Medium": 0.75,
     "Low": 0.5,
 }
+# Minimum score floor for each AI verdict level.  Ensures the final numeric
+# score always falls within the same tier as the AI's assessment, so the
+# gauge number and the verdict badge label are always consistent.
+_AI_VERDICT_FLOOR: dict[str, int] = {
+    "Phishing": 76,
+    "Likely Phishing": 51,
+    "Suspicious": 26,
+    "Safe": 0,
+}
 
 
 def apply_ai_score(base_score: int, ai_verdict: "AIVerdict") -> int:
-    """Blend AI verdict into the numerical risk score."""
+    """Blend AI verdict into the numerical risk score.
+
+    Adds the confidence-scaled point boost to the base score, then raises
+    it to a minimum floor so the result always lands in the same verdict
+    band as the AI's assessment.  Badge and gauge are always consistent.
+    """
     points = _AI_VERDICT_POINTS.get(ai_verdict.verdict, 0)
     multiplier = _CONFIDENCE_MULTIPLIER.get(ai_verdict.confidence, 0.75)
-    return min(100, base_score + int(points * multiplier))
+    boosted = base_score + int(points * multiplier)
+    floor = _AI_VERDICT_FLOOR.get(ai_verdict.verdict, 0)
+    return min(100, max(boosted, floor))
 
 
 def _rule_based_verdict(risk_score: int) -> "AIVerdict":
