@@ -9,7 +9,7 @@ function getColor(score) {
 export default function RiskGauge({ score }) {
   const [animated, setAnimated] = useState(0);
   const color = getColor(score);
-  const radius = 80;
+  const radius = 90;
   const stroke = 12;
   const circumference = Math.PI * radius;
   const offset = circumference - (animated / 100) * circumference;
@@ -34,7 +34,7 @@ export default function RiskGauge({ score }) {
       <svg width="200" height="120" viewBox="0 0 200 120">
         {/* Background arc */}
         <path
-          d="M 10 110 A 80 80 0 0 1 190 110"
+          d="M 10 110 A 90 90 0 0 1 190 110"
           fill="none"
           stroke="#2a2a2a"
           strokeWidth={stroke}
@@ -42,7 +42,7 @@ export default function RiskGauge({ score }) {
         />
         {/* Score arc */}
         <path
-          d="M 10 110 A 80 80 0 0 1 190 110"
+          d="M 10 110 A 90 90 0 0 1 190 110"
           fill="none"
           stroke={color}
           strokeWidth={stroke}
