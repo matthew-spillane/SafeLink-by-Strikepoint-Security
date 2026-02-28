@@ -28,24 +28,11 @@ body {
   color: var(--color-sp-text);
 }
 
-/* Hero background: base color + red glow + grid overlay */
+/* Hero background: dark base + subtle crimson glow + vignette */
 .sp-hero-bg {
   background:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 49px,
-      rgba(255, 255, 255, 0.07) 49px,
-      rgba(255, 255, 255, 0.07) 50px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 49px,
-      rgba(255, 255, 255, 0.07) 49px,
-      rgba(255, 255, 255, 0.07) 50px
-    ),
-    radial-gradient(ellipse at 15% 20%, rgba(180, 30, 20, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5) 100%),
+    radial-gradient(ellipse at 12% 15%, rgba(140, 20, 15, 0.18) 0%, transparent 50%),
     #0a0a0a;
 }
 
