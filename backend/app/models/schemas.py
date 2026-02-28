@@ -5,6 +5,7 @@ from datetime import datetime
 
 class ScanRequest(BaseModel):
     url: str
+    session_id: Optional[str] = None
 
 
 class CheckResult(BaseModel):

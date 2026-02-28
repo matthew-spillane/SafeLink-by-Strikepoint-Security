@@ -1,5 +1,15 @@
 const API_BASE = "";
 
+function getSessionId() {
+  const key = "safelink-session-id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -15,7 +25,7 @@ async function request(path, options = {}) {
 export function scanUrl(url) {
   return request("/api/scan", {
     method: "POST",
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ url, session_id: getSessionId() }),
   });
 }
 
@@ -24,7 +34,8 @@ export function getScan(scanId) {
 }
 
 export function getHistory() {
-  return request("/api/history");
+  const sid = getSessionId();
+  return request(`/api/history?session_id=${encodeURIComponent(sid)}`);
 }
 
 export function getUrlscanResult(scanId) {

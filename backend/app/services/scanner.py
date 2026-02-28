@@ -227,7 +227,7 @@ async def get_ai_verdict(url: str, checks: list[CheckResult], risk_score: int) -
         return _rule_based_verdict(risk_score)
 
 
-async def run_scan(url: str, db: Session) -> ScanResponse:
+async def run_scan(url: str, db: Session, *, session_id: str | None = None) -> ScanResponse:
     # Run all checks and URLscan concurrently
     check_results, urlscan_result = await asyncio.gather(
         asyncio.gather(
@@ -279,6 +279,7 @@ async def run_scan(url: str, db: Session) -> ScanResponse:
         risk_score=risk_score,
         verdict=verdict,
         results_json=json.dumps(results_data),
+        session_id=session_id,
     )
     db.add(scan)
     db.commit()

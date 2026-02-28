@@ -31,7 +31,7 @@ async def scan_url(request: ScanRequest, db: Session = Depends(get_db)):
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
     try:
-        return await run_scan(url, db)
+        return await run_scan(url, db, session_id=request.session_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
 
@@ -66,8 +66,14 @@ async def get_scan(scan_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/history", response_model=list[ScanHistoryItem])
-async def get_history(db: Session = Depends(get_db)):
-    scans = db.query(Scan).order_by(Scan.created_at.desc()).limit(20).all()
+async def get_history(session_id: str | None = None, db: Session = Depends(get_db)):
+    query = db.query(Scan)
+    if session_id:
+        query = query.filter(Scan.session_id == session_id)
+    else:
+        # No session ID provided — return nothing (hide legacy scans)
+        return []
+    scans = query.order_by(Scan.created_at.desc()).limit(20).all()
     result = []
     for scan in scans:
         _, color = get_verdict(scan.risk_score)
