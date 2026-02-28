@@ -47,8 +47,9 @@ export default function RiskGauge({ score }) {
           stroke={color}
           strokeWidth={stroke}
           strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
+          {...(animated < 100
+            ? { strokeDasharray: circumference, strokeDashoffset: offset }
+            : {})}
           style={{ transition: "stroke-dashoffset 0.1s ease-out" }}
         />
         {/* Score text */}
