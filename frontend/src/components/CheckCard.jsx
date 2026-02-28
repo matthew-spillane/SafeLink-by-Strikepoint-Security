@@ -20,7 +20,7 @@ import {
 
 const statusConfig = {
   pass: { color: "text-green-400", bg: "bg-green-500/10", Icon: CheckCircle2 },
-  warning: { color: "text-gray-300", bg: "bg-white/5", Icon: AlertTriangle },
+  warning: { color: "text-amber-400", bg: "bg-amber-500/10", Icon: AlertTriangle },
   fail: { color: "text-sp-red", bg: "bg-sp-red/10", Icon: XCircle },
   skipped: { color: "text-sp-muted", bg: "bg-white/5", Icon: MinusCircle },
 };

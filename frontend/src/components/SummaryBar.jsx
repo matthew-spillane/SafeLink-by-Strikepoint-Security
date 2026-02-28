@@ -9,7 +9,7 @@ export default function SummaryBar({ checks }) {
 
   const items = [
     { label: "Passed", count: passed, color: "text-green-400", Icon: CheckCircle2 },
-    { label: "Warnings", count: warnings, color: "text-gray-300", Icon: AlertTriangle },
+    { label: "Warnings", count: warnings, color: "text-amber-400", Icon: AlertTriangle },
     { label: "Failed", count: failed, color: "text-sp-red", Icon: XCircle },
     { label: "Skipped", count: skipped, color: "text-sp-muted", Icon: MinusCircle },
   ];
