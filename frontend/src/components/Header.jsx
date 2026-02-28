@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Shield, Home, History } from "lucide-react";
+import { Home, History } from "lucide-react";
 
 export default function Header() {
   const location = useLocation();
@@ -26,7 +26,7 @@ export default function Header() {
           onClick={navTo("/")}
           className="flex items-center gap-2.5 cursor-pointer"
         >
-          <Shield className="w-6 h-6 text-sp-red" />
+          <img src="/logoclose.png" alt="SafeLink" className="h-8 w-auto" />
           <span className="font-bold text-lg text-white tracking-tight">SafeLink</span>
         </a>
 
