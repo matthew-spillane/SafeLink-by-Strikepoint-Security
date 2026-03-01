@@ -61,7 +61,9 @@ export default function ScanPage() {
           }}
         />
       )}
+      <div className="relative" style={{ zIndex: 2 }}>
       <ResultsDashboard result={result} onReset={() => navigate("/")} />
+      </div>
     </div>
   );
 }
