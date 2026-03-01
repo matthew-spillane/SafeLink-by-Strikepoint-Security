@@ -68,7 +68,7 @@ export default function HomePage() {
         <div
           className="verdict-glow"
           style={{
-            background: `radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5) 100%), radial-gradient(ellipse at 12% 15%, ${glowColor} 0%, transparent 50%), #0a0a0a`,
+            background: `radial-gradient(ellipse at 12% 15%, ${glowColor} 0%, transparent 50%)`,
           }}
         />
       )}
