@@ -74,9 +74,11 @@ def calculate_risk_score(checks: list[CheckResult]) -> int:
                 has_login = any("login form" in f.lower() for f in findings)
                 has_mismatch = any("but domain is" in f.lower() for f in findings)
                 if has_login and has_mismatch:
-                    score += 20
+                    score += 10
                 elif findings:
-                    score += min(len(findings) * 5, 15)
+                    # Minimal weight — brand keywords alone (social login
+                    # buttons, share widgets) should not swing the score.
+                    score += min(len(findings) * 2, 5)
 
     return min(score, 100)
 
@@ -172,6 +174,18 @@ AI_SYSTEM_PROMPT = (
     "deceptive URL paths, lookalike characters, and unusual TLDs. "
     "Explicitly flag these patterns even when all reputation API checks return clean results — "
     "a URL can be newly registered and not yet blacklisted while still being malicious. "
+    "\n\n"
+    "IMPORTANT — Page Content brand keyword false-positive guidance: "
+    "Most legitimate websites embed social login buttons (Sign in with Google, Sign in with Apple), "
+    "social share widgets (Share on Twitter/Facebook), and OAuth integrations. "
+    "Finding brand names like 'Google', 'Apple', 'Twitter', 'Facebook', 'Microsoft', 'Amazon', "
+    "or 'PayPal' in page content is completely NORMAL and must NOT be treated as suspicious on its own. "
+    "Only treat brand keywords in page content as a risk factor when they appear ALONGSIDE other "
+    "concrete red flags such as: a newly registered domain (< 30 days), missing SSL, detections by "
+    "VirusTotal or Google Safe Browsing, suspicious redirect chains, or a domain that is a lookalike "
+    "of a well-known brand. A well-established site with clean reputation checks should never be "
+    "flagged solely because its page content mentions major brand names. "
+    "\n\n"
     "You MUST always return a verdict for every URL. "
     "Return ONLY a JSON object with exactly three fields: "
     "verdict (one of: Safe, Suspicious, Likely Phishing, Phishing), "
