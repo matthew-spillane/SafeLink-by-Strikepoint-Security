@@ -44,26 +44,9 @@ export default function ScanPage() {
     );
   }
 
-  const glowColor = result
-    ? {
-        Safe: "rgba(34, 197, 94, 0.12)",
-        Suspicious: "rgba(234, 179, 8, 0.12)",
-      }[result.verdict] || "rgba(180, 30, 20, 0.15)"
-    : undefined;
-
   return (
     <div className="pt-8">
-      {glowColor && (
-        <div
-          className="verdict-glow"
-          style={{
-            background: `radial-gradient(ellipse at 8% 10%, ${glowColor} 0%, transparent 30%)`,
-          }}
-        />
-      )}
-      <div className="relative" style={{ zIndex: 2 }}>
       <ResultsDashboard result={result} onReset={() => navigate("/")} />
-      </div>
     </div>
   );
 }

@@ -55,23 +55,8 @@ export default function HomePage() {
     Phishing: "bg-sp-red/10 text-sp-red border-sp-red/30",
   };
 
-  const glowColor = result
-    ? {
-        Safe: "rgba(34, 197, 94, 0.12)",
-        Suspicious: "rgba(234, 179, 8, 0.12)",
-      }[result.verdict] || "rgba(180, 30, 20, 0.15)"
-    : undefined;
-
   return (
     <div className="pt-12 sm:pt-20">
-      {glowColor && (
-        <div
-          className="verdict-glow"
-          style={{
-            background: `radial-gradient(ellipse at 8% 10%, ${glowColor} 0%, transparent 30%)`,
-          }}
-        />
-      )}
       {/* Hero */}
       {!result && (
         <div className="text-center mb-10 animate-fade-in-up">
