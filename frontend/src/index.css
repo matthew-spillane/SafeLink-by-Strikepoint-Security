@@ -47,8 +47,8 @@ body {
 
 /* Card — solid opaque background, sits above the verdict-glow overlay */
 .glass-card {
-  background: var(--color-sp-card);
-  border: 1px solid var(--color-sp-border);
+  background-color: #111111;
+  border: 1px solid #2a2a2a;
   position: relative;
   z-index: 2;
 }

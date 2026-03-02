@@ -60,7 +60,7 @@ export default function PagePreview({ urlscan, scanId }) {
   // No URLscan UUID at all — API key not configured
   if (!data || (!data.available && !data.urlscan_uuid)) {
     return (
-      <div className="glass-card rounded-xl p-6 animate-fade-in-up">
+      <div className="glass-card bg-[#111111] rounded-xl p-6 animate-fade-in-up">
         <div className="flex items-center gap-2 mb-4">
           <Monitor className="w-5 h-5 text-sp-red" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sp-red">
@@ -79,7 +79,7 @@ export default function PagePreview({ urlscan, scanId }) {
   // Loading state — UUID exists but result not ready yet
   if (!data.available && polling) {
     return (
-      <div className="glass-card rounded-xl p-6 animate-fade-in-up">
+      <div className="glass-card bg-[#111111] rounded-xl p-6 animate-fade-in-up">
         <div className="flex items-center gap-2 mb-4">
           <Monitor className="w-5 h-5 text-sp-red" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sp-red">
@@ -98,7 +98,7 @@ export default function PagePreview({ urlscan, scanId }) {
   // Timed out waiting — show unavailable with report link if we have one
   if (!data.available && !polling) {
     return (
-      <div className="glass-card rounded-xl p-6 animate-fade-in-up">
+      <div className="glass-card bg-[#111111] rounded-xl p-6 animate-fade-in-up">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Monitor className="w-5 h-5 text-sp-red" />
@@ -131,7 +131,7 @@ export default function PagePreview({ urlscan, scanId }) {
   const vc = data.verdict ? (verdictConfig[data.verdict] || verdictConfig.Suspicious) : null;
 
   return (
-    <div className="glass-card rounded-xl overflow-hidden animate-fade-in-up">
+    <div className="glass-card bg-[#111111] rounded-xl overflow-hidden animate-fade-in-up">
       <div className="flex items-center justify-between p-4 border-b border-sp-border">
         <div className="flex items-center gap-2">
           <Monitor className="w-5 h-5 text-sp-red" />

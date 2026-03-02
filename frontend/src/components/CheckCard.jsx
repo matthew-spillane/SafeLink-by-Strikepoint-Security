@@ -44,7 +44,7 @@ export default function CheckCard({ check }) {
   const CheckIcon = iconMap[check.name] || Shield;
 
   return (
-    <div className="glass-card rounded-xl overflow-hidden animate-fade-in-up">
+    <div className="glass-card bg-[#111111] rounded-xl overflow-hidden animate-fade-in-up">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 p-4 text-left hover:bg-sp-card-light transition-colors"

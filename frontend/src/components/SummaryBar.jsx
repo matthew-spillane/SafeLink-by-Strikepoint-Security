@@ -19,7 +19,7 @@ export default function SummaryBar({ checks }) {
       {items.map((item) => (
         <div
           key={item.label}
-          className="glass-card rounded-xl p-3 flex flex-col items-center gap-1"
+          className="glass-card bg-[#111111] rounded-xl p-3 flex flex-col items-center gap-1"
         >
           <item.Icon className={`w-5 h-5 ${item.color}`} />
           <span className="text-xl font-bold text-white">{item.count}</span>

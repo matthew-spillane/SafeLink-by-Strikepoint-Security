@@ -5,7 +5,7 @@ export default function RedirectChain({ chain }) {
   if (!chain || chain.length <= 1) return null;
 
   return (
-    <div className="glass-card rounded-xl p-4 animate-fade-in-up">
+    <div className="glass-card bg-[#111111] rounded-xl p-4 animate-fade-in-up">
       <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
         <Globe className="w-4 h-4 text-sp-red" />
         <span className="uppercase tracking-wider text-sp-red">

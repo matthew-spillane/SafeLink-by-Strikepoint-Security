@@ -20,7 +20,7 @@ export default function ResultsDashboard({ result, onReset }) {
       <AIVerdictCard aiVerdict={result.ai_verdict} />
 
       {/* 2. Score + Verdict */}
-      <div className="glass-card rounded-xl flex flex-col items-center gap-3 py-5 px-4">
+      <div className="glass-card bg-[#111111] rounded-xl flex flex-col items-center gap-3 py-5 px-4">
         <RiskGauge score={result.risk_score} />
         <VerdictBadge verdict={result.verdict} />
         <p className="text-sm text-sp-text font-mono truncate max-w-md" title={result.url}>
@@ -35,14 +35,14 @@ export default function ResultsDashboard({ result, onReset }) {
       <div className="flex justify-center gap-3">
         <button
           onClick={copyLink}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg glass-card text-sp-text hover:text-white hover:bg-sp-card-light transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg glass-card bg-[#111111] text-sp-text hover:text-white hover:bg-sp-card-light transition-colors"
         >
           <Link2 className="w-4 h-4" />
           Copy Report Link
         </button>
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg glass-card text-sp-text hover:text-white hover:bg-sp-card-light transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg glass-card bg-[#111111] text-sp-text hover:text-white hover:bg-sp-card-light transition-colors"
         >
           <RotateCcw className="w-4 h-4" />
           Scan Another URL
