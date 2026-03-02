@@ -71,7 +71,7 @@ export default function CheckCard({ check }) {
       </button>
       {expanded && check.details && (
         <div className="px-4 pb-4 border-t border-sp-border">
-          <pre className="mt-3 text-xs bg-black/30 rounded-lg p-3 overflow-x-auto text-gray-300">
+          <pre className="mt-3 text-xs bg-[#0d0d0d] rounded-lg p-3 overflow-x-auto text-gray-300">
             {JSON.stringify(check.details, null, 2)}
           </pre>
         </div>

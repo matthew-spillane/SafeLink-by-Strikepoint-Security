@@ -20,7 +20,7 @@ export default function ResultsDashboard({ result, onReset }) {
       <AIVerdictCard aiVerdict={result.ai_verdict} />
 
       {/* 2. Score + Verdict */}
-      <div className="flex flex-col items-center gap-3 pt-2">
+      <div className="glass-card rounded-xl flex flex-col items-center gap-3 py-5 px-4">
         <RiskGauge score={result.risk_score} />
         <VerdictBadge verdict={result.verdict} />
         <p className="text-sm text-sp-text font-mono truncate max-w-md" title={result.url}>

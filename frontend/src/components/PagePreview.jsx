@@ -160,7 +160,7 @@ export default function PagePreview({ urlscan, scanId }) {
         </div>
       </div>
 
-      <div className="bg-black/20">
+      <div className="bg-[#0d0d0d]">
         {data.screenshot_url && !imgError ? (
           <img
             src={data.screenshot_url}
