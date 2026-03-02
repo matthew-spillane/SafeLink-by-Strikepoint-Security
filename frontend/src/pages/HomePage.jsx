@@ -57,9 +57,9 @@ export default function HomePage() {
 
   const glowColor = result
     ? {
-        Safe: "rgba(34, 197, 94, 0.15)",
-        Suspicious: "rgba(234, 179, 8, 0.15)",
-      }[result.verdict] || "rgba(180, 30, 20, 0.35)"
+        Safe: "rgba(34, 197, 94, 0.12)",
+        Suspicious: "rgba(234, 179, 8, 0.12)",
+      }[result.verdict] || "rgba(180, 30, 20, 0.15)"
     : undefined;
 
   return (
@@ -68,7 +68,7 @@ export default function HomePage() {
         <div
           className="verdict-glow"
           style={{
-            background: `radial-gradient(ellipse at 12% 15%, ${glowColor} 0%, transparent 50%)`,
+            background: `radial-gradient(ellipse at 8% 10%, ${glowColor} 0%, transparent 30%)`,
           }}
         />
       )}
