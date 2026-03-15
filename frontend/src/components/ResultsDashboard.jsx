@@ -11,6 +11,8 @@ import CloudflareCard from "./CloudflareCard";
 import URLReputationCard from "./URLReputationCard";
 import HostIntelCard from "./HostIntelCard";
 import ThreatIntelCard from "./ThreatIntelCard";
+import ScanSummaryPanel from "./ScanSummaryPanel";
+import ModuleStatusPanel from "./ModuleStatusPanel";
 
 // Check names that are consolidated into ThreatIntelCard
 const threatIntelCheckNames = new Set(["VirusTotal", "Google Safe Browsing"]);
@@ -30,12 +32,12 @@ export default function ResultsDashboard({ result, onReset }) {
 
   return (
     <div className="space-y-4 animate-fade-in-up">
-      {/* 1. Risk Score — horizontal severity bar */}
+
+      {/* ── Row 1: Risk Score + Metadata — full width ── */}
       <div className="bg-[#161b22] border border-[#30363d] rounded-md p-4">
         <RiskGauge score={result.risk_score} />
       </div>
 
-      {/* Metadata bar — Cortex XDR style */}
       <div className="bg-[#161b22] border border-[#30363d] rounded-md px-4 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1">
         <div className="flex items-center gap-2">
           <span className="text-xs uppercase text-[#8b949e] font-mono">Verdict</span>
@@ -58,28 +60,46 @@ export default function ResultsDashboard({ result, onReset }) {
         </div>
       </div>
 
-      {/* 2. AI Analyst Verdict */}
-      <AIVerdictCard aiVerdict={result.ai_verdict} />
+      {/* ── Row 2: AI Analyst (65%) + Scan Summary (35%) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="md:col-span-8">
+          <AIVerdictCard aiVerdict={result.ai_verdict} />
+        </div>
+        <div className="md:col-span-4">
+          <ScanSummaryPanel checks={result.checks} result={result} />
+        </div>
+      </div>
 
-      {/* 3. Cloudflare Radar */}
-      <CloudflareCard data={result.cloudflare_radar} />
+      {/* ── Row 3: Three equal columns — Cloudflare / IPQS / Shodan ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="h-full">
+          <CloudflareCard data={result.cloudflare_radar} />
+        </div>
+        <div className="h-full">
+          <URLReputationCard data={result.ipqualityscore} />
+        </div>
+        <div className="h-full">
+          <HostIntelCard data={result.shodan} />
+        </div>
+      </div>
 
-      {/* 4. URL Reputation (IPQualityScore) */}
-      <URLReputationCard data={result.ipqualityscore} />
+      {/* ── Row 4: Threat Intel (70%) + Module Status (30%) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="md:col-span-8">
+          <ThreatIntelCard checks={result.checks} otxData={result.alienvault_otx} />
+        </div>
+        <div className="md:col-span-4">
+          <ModuleStatusPanel checks={result.checks} />
+        </div>
+      </div>
 
-      {/* 5. Host Intelligence (Shodan) */}
-      <HostIntelCard data={result.shodan} />
-
-      {/* 6. Threat Intelligence (VT + GSB + OTX consolidated) */}
-      <ThreatIntelCard checks={result.checks} otxData={result.alienvault_otx} />
-
-      {/* 7. Redirect chain */}
+      {/* ── Row 4.5: Redirect chain (if present) ── */}
       <RedirectChain chain={result.redirect_chain} />
 
-      {/* 8. Summary */}
+      {/* ── Row 5: Summary bar — full width ── */}
       <SummaryBar checks={result.checks} />
 
-      {/* 9. Detailed Analysis — data table */}
+      {/* ── Row 6: Detailed Analysis table — full width ── */}
       <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden">
         <div className="px-4 py-2.5 border-b border-[#30363d] border-l-2 border-l-[#f85149]">
           <span className="text-xs font-semibold uppercase tracking-widest text-[#8b949e]">
@@ -97,7 +117,7 @@ export default function ResultsDashboard({ result, onReset }) {
         ))}
       </div>
 
-      {/* 10. Page Capture — collapsed by default, at bottom */}
+      {/* ── Row 7: Page Capture — collapsed by default ── */}
       <PagePreview urlscan={result.urlscan} scanId={result.id} />
 
       {/* Action buttons */}

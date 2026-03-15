@@ -23,7 +23,7 @@ export default function CloudflareCard({ data }) {
   const isUnavailable = !data || data.status === "error" || data.status === "skipped";
 
   return (
-    <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up">
+    <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up h-full">
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}

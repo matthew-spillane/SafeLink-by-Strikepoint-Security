@@ -14,7 +14,7 @@ export default function AIVerdictCard({ aiVerdict }) {
   const c = verdictColors[aiVerdict.verdict] || verdictColors.Suspicious;
 
   return (
-    <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up">
+    <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#30363d] border-l-2 border-l-[#f85149]">
         <div className="flex items-center gap-2">

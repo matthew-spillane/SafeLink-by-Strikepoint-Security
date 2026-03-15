@@ -19,7 +19,7 @@ export default function HostIntelCard({ data }) {
   const cveCount = data?.cves?.length || 0;
 
   return (
-    <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up">
+    <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up h-full">
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
