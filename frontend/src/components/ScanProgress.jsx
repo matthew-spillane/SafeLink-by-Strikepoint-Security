@@ -27,10 +27,10 @@ export default function ScanProgress() {
     <div className="flex flex-col items-center gap-6 py-16 animate-fade-in-up">
       {/* Spinner */}
       <div className="relative">
-        <div className="w-16 h-16 rounded-full border-4 border-sp-red/20 animate-pulse-ring" />
-        <div className="absolute top-3 left-3 w-10 h-10 flex items-center justify-center">
+        <div className="w-14 h-14 rounded-full border-2 border-[#f85149]/20 animate-pulse-ring" />
+        <div className="absolute top-3 left-3 w-8 h-8 flex items-center justify-center">
           {React.createElement(stages[activeStage].Icon, {
-            className: `w-6 h-6 text-sp-red ${activeStage < stages.length - 1 ? "animate-spin-slow" : ""}`,
+            className: `w-5 h-5 text-[#f85149] ${activeStage < stages.length - 1 ? "animate-spin-slow" : ""}`,
           })}
         </div>
       </div>
@@ -44,21 +44,21 @@ export default function ScanProgress() {
             <React.Fragment key={stage.label}>
               <div className="flex items-center gap-1.5">
                 <div
-                  className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                  className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
                     isDone
-                      ? "bg-green-400"
+                      ? "bg-[#3fb950]"
                       : isActive
-                      ? "bg-sp-red animate-pulse"
-                      : "bg-sp-border"
+                      ? "bg-[#f85149] animate-pulse"
+                      : "bg-[#30363d]"
                   }`}
                 />
                 <span
-                  className={`text-xs font-medium transition-colors duration-300 ${
+                  className={`text-xs font-mono transition-colors duration-300 ${
                     isDone
-                      ? "text-green-400"
+                      ? "text-[#3fb950]"
                       : isActive
-                      ? "text-white"
-                      : "text-sp-muted"
+                      ? "text-[#e6edf3]"
+                      : "text-[#484f58]"
                   }`}
                 >
                   {stage.label}
@@ -67,7 +67,7 @@ export default function ScanProgress() {
               {i < stages.length - 1 && (
                 <div
                   className={`w-6 h-px transition-colors duration-300 ${
-                    isDone ? "bg-green-400" : "bg-sp-border"
+                    isDone ? "bg-[#3fb950]" : "bg-[#30363d]"
                   }`}
                 />
               )}
@@ -76,7 +76,7 @@ export default function ScanProgress() {
         })}
       </div>
 
-      <p className="text-sp-text text-sm">
+      <p className="text-[#8b949e] text-xs font-mono">
         Analyzing URL across multiple security engines...
       </p>
     </div>

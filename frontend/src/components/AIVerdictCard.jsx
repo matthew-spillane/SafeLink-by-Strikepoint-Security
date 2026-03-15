@@ -1,60 +1,42 @@
 import React from "react";
-import { BrainCircuit, ShieldCheck, AlertTriangle, ShieldAlert, ShieldX } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 
-const verdictConfig = {
-  Safe: {
-    text: "text-green-400",
-    badgeBg: "bg-green-500/10",
-    Icon: ShieldCheck,
-  },
-  Suspicious: {
-    text: "text-sp-red",
-    badgeBg: "bg-sp-red/10",
-    Icon: AlertTriangle,
-  },
-  "Likely Phishing": {
-    text: "text-sp-red",
-    badgeBg: "bg-sp-red/10",
-    Icon: ShieldAlert,
-  },
-  Phishing: {
-    text: "text-sp-red",
-    badgeBg: "bg-sp-red/10",
-    Icon: ShieldX,
-  },
+const verdictColors = {
+  Safe: { text: "text-[#3fb950]", bg: "bg-[#3fb950]/10", border: "border-[#3fb950]/30" },
+  Suspicious: { text: "text-[#d29922]", bg: "bg-[#d29922]/10", border: "border-[#d29922]/30" },
+  "Likely Phishing": { text: "text-[#db6d28]", bg: "bg-[#db6d28]/10", border: "border-[#db6d28]/30" },
+  Phishing: { text: "text-[#f85149]", bg: "bg-[#f85149]/10", border: "border-[#f85149]/30" },
 };
 
 export default function AIVerdictCard({ aiVerdict }) {
   if (!aiVerdict) return null;
 
-  const c = verdictConfig[aiVerdict.verdict] || verdictConfig.Suspicious;
-  const VerdictIcon = c.Icon;
+  const c = verdictColors[aiVerdict.verdict] || verdictColors.Suspicious;
 
   return (
-    <div className="glass-card bg-[#111111] rounded-xl p-5 animate-fade-in-up">
-      <div className="flex items-center gap-2 mb-3">
-        <BrainCircuit className="w-5 h-5 text-sp-red" />
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-sp-red">
-          AI Analyst Verdict
-        </h3>
+    <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#30363d] border-l-2 border-l-[#f85149]">
+        <div className="flex items-center gap-2">
+          <BrainCircuit className="w-4 h-4 text-[#8b949e]" />
+          <span className="text-xs font-semibold uppercase tracking-widest text-[#8b949e]">
+            AI Analyst
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded-sm ${c.bg} ${c.text}`}>
+            {aiVerdict.verdict}
+          </span>
+          <span className="text-xs font-mono px-2 py-0.5 rounded-sm bg-[#1c2128] text-[#8b949e] border border-[#30363d]">
+            {aiVerdict.confidence}
+          </span>
+        </div>
       </div>
-      <div className="flex items-start gap-4">
-        <div className={`p-3 rounded-xl ${c.badgeBg} shrink-0`}>
-          <VerdictIcon className={`w-8 h-8 ${c.text}`} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className={`text-lg font-bold ${c.text}`}>
-              {aiVerdict.verdict}
-            </span>
-            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${c.badgeBg} ${c.text}`}>
-              {aiVerdict.confidence} Confidence
-            </span>
-          </div>
-          <p className="mt-2 text-sm text-sp-text leading-relaxed">
-            {aiVerdict.explanation}
-          </p>
-        </div>
+      {/* Body */}
+      <div className="px-4 py-3">
+        <p className="text-sm text-[#e6edf3] leading-relaxed">
+          {aiVerdict.explanation}
+        </p>
       </div>
     </div>
   );

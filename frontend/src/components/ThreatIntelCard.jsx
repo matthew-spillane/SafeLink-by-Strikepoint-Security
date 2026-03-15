@@ -1,18 +1,15 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, ShieldAlert, AlertTriangle, Shield, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
-function Badge({ children, color = "default" }) {
-  const colors = {
-    red: "bg-sp-red/10 text-sp-red",
-    green: "bg-green-500/10 text-green-400",
-    amber: "bg-amber-500/10 text-amber-400",
-    default: "bg-white/5 text-sp-text",
-  };
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colors[color] || colors.default}`}>
-      {children}
-    </span>
-  );
+function StatusDot({ status }) {
+  const color = status === "pass" || status === "clean"
+    ? "bg-[#3fb950]"
+    : status === "warning" || status === "caution"
+    ? "bg-[#d29922]"
+    : status === "fail" || status === "danger"
+    ? "bg-[#f85149]"
+    : "bg-[#484f58]";
+  return <span className={`inline-block w-2 h-2 rounded-full ${color}`} />;
 }
 
 export default function ThreatIntelCard({ checks, otxData }) {
@@ -35,87 +32,66 @@ export default function ThreatIntelCard({ checks, otxData }) {
 
   const hasThreats = vtFlagged > 0 || gsbFail || pulseCount > 0;
 
+  const engines = [
+    {
+      name: "VirusTotal",
+      status: vtCheck?.status === "skipped" ? "skipped" : vtFlagged > 0 ? "fail" : "pass",
+      detail: vtCheck?.status === "skipped" ? "Unavailable" : vtFlagged > 0 ? `${vtFlagged}/${vtTotal} flagged` : `${vtTotal} engines clean`,
+    },
+    {
+      name: "Google Safe Browsing",
+      status: gsbCheck?.status === "skipped" ? "skipped" : gsbFail ? "fail" : "pass",
+      detail: gsbCheck?.status === "skipped" ? "Unavailable" : gsbFail ? "Flagged" : "Clean",
+    },
+    {
+      name: "AlienVault OTX",
+      status: otxUnavailable ? "skipped" : pulseCount > 0 ? "warning" : "pass",
+      detail: otxUnavailable ? "Unavailable" : pulseCount > 0 ? `${pulseCount} pulse${pulseCount !== 1 ? "s" : ""}` : "No pulses",
+    },
+  ];
+
   return (
-    <div className="glass-card bg-[#111111] rounded-xl overflow-hidden animate-fade-in-up">
+    <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up">
+      {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 p-4 text-left hover:bg-sp-card-light transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 border-l-2 border-l-[#f85149] hover:bg-[#1c2128] transition-colors"
       >
-        <div className={`p-2 rounded-lg ${hasThreats ? "bg-sp-red/10" : "bg-green-500/10"}`}>
-          <ShieldAlert className={`w-5 h-5 ${hasThreats ? "text-sp-red" : "text-green-400"}`} />
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-widest text-[#8b949e]">
+            Threat Intelligence
+          </span>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm text-white">Threat Intelligence</span>
-            {hasThreats ? (
-              <Badge color="red">Detections Found</Badge>
-            ) : (
-              <Badge color="green">No Detections</Badge>
-            )}
-          </div>
-          <p className="text-sm text-sp-text mt-0.5 truncate">
-            Consolidated view of VirusTotal, Google Safe Browsing & AlienVault OTX
-          </p>
+        <div className="flex items-center gap-2">
+          {hasThreats ? (
+            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#f85149]/10 text-[#f85149]">DETECTIONS</span>
+          ) : (
+            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#3fb950]/10 text-[#3fb950]">CLEAN</span>
+          )}
+          {expanded ? <ChevronUp className="w-3.5 h-3.5 text-[#8b949e]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#8b949e]" />}
         </div>
-        {expanded ? (
-          <ChevronUp className="w-4 h-4 text-sp-muted shrink-0" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-sp-muted shrink-0" />
-        )}
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 border-t border-sp-border">
-          <div className="mt-3 space-y-3">
-            {/* VirusTotal */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0d0d0d]">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className={`w-4 h-4 ${vtFlagged > 0 ? "text-sp-red" : "text-green-400"}`} />
-                <span className="text-sm text-white">VirusTotal</span>
+        <div className="border-t border-[#30363d]">
+          {engines.map((engine, i) => (
+            <div
+              key={engine.name}
+              className={`flex items-center justify-between px-4 py-2.5 ${i < engines.length - 1 ? "border-b border-[#30363d]" : ""}`}
+            >
+              <div className="flex items-center gap-2.5">
+                <StatusDot status={engine.status} />
+                <span className="text-sm font-mono text-[#e6edf3]">{engine.name}</span>
               </div>
-              {vtCheck?.status === "skipped" ? (
-                <span className="text-xs text-sp-muted">Unavailable</span>
-              ) : (
-                <div className="flex items-center gap-2">
-                  {vtFlagged > 0 ? (
-                    <Badge color="red">{vtFlagged} / {vtTotal} flagged</Badge>
-                  ) : (
-                    <Badge color="green">{vtTotal} engines clean</Badge>
-                  )}
-                </div>
-              )}
+              <span className={`text-xs font-mono ${
+                engine.status === "fail" ? "text-[#f85149]" :
+                engine.status === "warning" ? "text-[#d29922]" :
+                engine.status === "pass" ? "text-[#3fb950]" : "text-[#484f58]"
+              }`}>
+                {engine.detail}
+              </span>
             </div>
-
-            {/* Google Safe Browsing */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0d0d0d]">
-              <div className="flex items-center gap-2">
-                <Shield className={`w-4 h-4 ${gsbFail ? "text-sp-red" : "text-green-400"}`} />
-                <span className="text-sm text-white">Google Safe Browsing</span>
-              </div>
-              {gsbCheck?.status === "skipped" ? (
-                <span className="text-xs text-sp-muted">Unavailable</span>
-              ) : gsbFail ? (
-                <Badge color="red">Flagged</Badge>
-              ) : (
-                <Badge color="green">Clean</Badge>
-              )}
-            </div>
-
-            {/* AlienVault OTX */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-[#0d0d0d]">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className={`w-4 h-4 ${pulseCount > 0 ? "text-amber-400" : otxUnavailable ? "text-sp-muted" : "text-green-400"}`} />
-                <span className="text-sm text-white">AlienVault OTX</span>
-              </div>
-              {otxUnavailable ? (
-                <span className="text-xs text-sp-muted">Unavailable</span>
-              ) : pulseCount > 0 ? (
-                <Badge color="amber">{pulseCount} pulse{pulseCount !== 1 ? "s" : ""}</Badge>
-              ) : (
-                <Badge color="green">No pulses</Badge>
-              )}
-            </div>
-          </div>
+          ))}
         </div>
       )}
     </div>

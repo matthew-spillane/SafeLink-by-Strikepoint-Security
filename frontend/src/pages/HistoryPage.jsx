@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { History, Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import { getHistory } from "../api";
 
 const verdictStyles = {
-  Safe: "bg-green-500/10 text-green-400",
-  Suspicious: "bg-sp-red/10 text-sp-red",
-  "Likely Phishing": "bg-sp-red/10 text-sp-red",
-  Phishing: "bg-sp-red/10 text-sp-red",
+  Safe: "text-[#3fb950]",
+  Suspicious: "text-[#d29922]",
+  "Likely Phishing": "text-[#db6d28]",
+  Phishing: "text-[#f85149]",
 };
 
 const rowBorder = {
-  Safe: "border-l-green-500",
-  Suspicious: "border-l-sp-red",
-  "Likely Phishing": "border-l-sp-red",
-  Phishing: "border-l-sp-red",
+  Safe: "border-l-[#3fb950]",
+  Suspicious: "border-l-[#d29922]",
+  "Likely Phishing": "border-l-[#db6d28]",
+  Phishing: "border-l-[#f85149]",
 };
 
 export default function HistoryPage() {
@@ -32,31 +32,30 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center gap-4 py-24">
-        <Loader2 className="w-8 h-8 text-sp-red animate-spin" />
-        <p className="text-sp-text text-sm">Loading scan history...</p>
+        <Loader2 className="w-6 h-6 text-[#f85149] animate-spin" />
+        <p className="text-[#8b949e] text-xs font-mono">Loading scan history...</p>
       </div>
     );
   }
 
   return (
     <div className="pt-8">
-      <div className="flex items-center gap-2 mb-6">
-        <History className="w-5 h-5 text-sp-red" />
-        <h2 className="text-xl font-bold text-white">Scan History</h2>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-[#8b949e]">Scan History</h2>
       </div>
 
       {scans.length === 0 ? (
-        <div className="text-center py-16 text-sp-text">
-          <p>No scans yet. Go scan a URL!</p>
+        <div className="text-center py-16 text-[#484f58] text-xs font-mono">
+          <p>No scans yet. Go scan a URL.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden">
           {/* Header (desktop) */}
-          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-semibold text-sp-muted uppercase tracking-wider">
-            <div className="col-span-5">URL</div>
-            <div className="col-span-3">Time</div>
-            <div className="col-span-1 text-center">Score</div>
-            <div className="col-span-2 text-center">Verdict</div>
+          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 border-b border-[#30363d] bg-[#0d1117]">
+            <div className="col-span-5 text-[10px] font-semibold uppercase tracking-widest text-[#484f58]">URL</div>
+            <div className="col-span-3 text-[10px] font-semibold uppercase tracking-widest text-[#484f58]">Time</div>
+            <div className="col-span-1 text-center text-[10px] font-semibold uppercase tracking-widest text-[#484f58]">Score</div>
+            <div className="col-span-2 text-center text-[10px] font-semibold uppercase tracking-widest text-[#484f58]">Verdict</div>
             <div className="col-span-1" />
           </div>
 
@@ -72,47 +71,39 @@ export default function HistoryPage() {
               <button
                 key={scan.id}
                 onClick={() => navigate(`/scan/${scan.id}`)}
-                className={`w-full glass-card rounded-xl border-l-4 ${
-                  rowBorder[scan.verdict] || "border-l-sp-muted"
-                } hover:bg-sp-card-light transition-colors text-left`}
+                className={`w-full border-l-2 ${
+                  rowBorder[scan.verdict] || "border-l-[#484f58]"
+                } hover:bg-[#1c2128] transition-colors text-left border-b border-[#30363d] last:border-b-0`}
               >
                 {/* Desktop */}
-                <div className="hidden sm:grid grid-cols-12 gap-4 items-center px-4 py-3">
-                  <div className="col-span-5 truncate font-mono text-sm text-white" title={scan.url}>
+                <div className="hidden sm:grid grid-cols-12 gap-4 items-center px-4 py-2.5">
+                  <div className="col-span-5 truncate font-mono text-sm text-[#e6edf3]" title={scan.url}>
                     {hostname}
                   </div>
-                  <div className="col-span-3 text-sm text-sp-text">{time}</div>
-                  <div className="col-span-1 text-center font-bold text-white">{scan.risk_score}</div>
+                  <div className="col-span-3 text-xs font-mono text-[#8b949e]">{time}</div>
+                  <div className="col-span-1 text-center font-bold font-mono text-[#e6edf3]">{scan.risk_score}</div>
                   <div className="col-span-2 flex justify-center">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        verdictStyles[scan.verdict] || verdictStyles.Suspicious
-                      }`}
-                    >
+                    <span className={`text-xs font-mono font-bold ${verdictStyles[scan.verdict] || verdictStyles.Suspicious}`}>
                       {scan.verdict}
                     </span>
                   </div>
                   <div className="col-span-1 flex justify-end">
-                    <ExternalLink className="w-4 h-4 text-sp-muted" />
+                    <ExternalLink className="w-3.5 h-3.5 text-[#484f58]" />
                   </div>
                 </div>
                 {/* Mobile */}
-                <div className="sm:hidden p-4 space-y-1">
+                <div className="sm:hidden p-3 space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm truncate max-w-[200px] text-white">
+                    <span className="font-mono text-sm truncate max-w-[200px] text-[#e6edf3]">
                       {hostname}
                     </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        verdictStyles[scan.verdict] || verdictStyles.Suspicious
-                      }`}
-                    >
+                    <span className={`text-xs font-mono font-bold ${verdictStyles[scan.verdict] || verdictStyles.Suspicious}`}>
                       {scan.verdict}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-sp-text">
+                  <div className="flex items-center justify-between text-xs text-[#8b949e] font-mono">
                     <span>{time}</span>
-                    <span className="font-bold text-white">Score: {scan.risk_score}</span>
+                    <span className="font-bold text-[#e6edf3]">{scan.risk_score}</span>
                   </div>
                 </div>
               </button>

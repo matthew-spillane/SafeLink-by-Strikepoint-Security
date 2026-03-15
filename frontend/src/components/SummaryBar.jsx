@@ -1,5 +1,4 @@
 import React from "react";
-import { CheckCircle2, AlertTriangle, XCircle, MinusCircle } from "lucide-react";
 
 export default function SummaryBar({ checks }) {
   const passed = checks.filter((c) => c.status === "pass").length;
@@ -8,22 +7,22 @@ export default function SummaryBar({ checks }) {
   const skipped = checks.filter((c) => c.status === "skipped").length;
 
   const items = [
-    { label: "Passed", count: passed, color: "text-green-400", Icon: CheckCircle2 },
-    { label: "Warnings", count: warnings, color: "text-amber-400", Icon: AlertTriangle },
-    { label: "Failed", count: failed, color: "text-sp-red", Icon: XCircle },
-    { label: "Skipped", count: skipped, color: "text-sp-muted", Icon: MinusCircle },
+    { label: "PASSED", count: passed, color: "text-[#3fb950]", dot: "bg-[#3fb950]" },
+    { label: "WARNINGS", count: warnings, color: "text-[#d29922]", dot: "bg-[#d29922]" },
+    { label: "FAILED", count: failed, color: "text-[#f85149]", dot: "bg-[#f85149]" },
+    { label: "SKIPPED", count: skipped, color: "text-[#484f58]", dot: "bg-[#484f58]" },
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-4 gap-2">
       {items.map((item) => (
         <div
           key={item.label}
-          className="glass-card bg-[#111111] rounded-xl p-3 flex flex-col items-center gap-1"
+          className="bg-[#161b22] border border-[#30363d] rounded-md px-3 py-2.5 flex items-center gap-2.5"
         >
-          <item.Icon className={`w-5 h-5 ${item.color}`} />
-          <span className="text-xl font-bold text-white">{item.count}</span>
-          <span className="text-xs text-sp-text">{item.label}</span>
+          <span className={`w-2 h-2 rounded-full shrink-0 ${item.dot}`} />
+          <span className={`text-lg font-bold font-mono ${item.color}`}>{item.count}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-[#8b949e]">{item.label}</span>
         </div>
       ))}
     </div>

@@ -3,20 +3,21 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Strikepoint Security brand palette */
-  --color-sp-bg: #0a0a0a;
-  --color-sp-card: #111111;
-  --color-sp-card-light: #1a1a1a;
-  --color-sp-border: #2a2a2a;
-  --color-sp-red: #e8412a;
-  --color-sp-red-hover: #d13a25;
-  --color-sp-text: #a0a0a0;
-  --color-sp-muted: #666666;
+  /* Enterprise SOC palette */
+  --color-sp-bg: #0d1117;
+  --color-sp-card: #161b22;
+  --color-sp-card-light: #1c2128;
+  --color-sp-border: #30363d;
+  --color-sp-red: #f85149;
+  --color-sp-red-hover: #da3633;
+  --color-sp-text: #e6edf3;
+  --color-sp-muted: #8b949e;
 
-  /* Risk gauge colors */
-  --color-risk-safe: #22c55e;
-  --color-risk-medium: #eab308;
-  --color-risk-high: #e8412a;
+  /* Risk severity colors */
+  --color-risk-safe: #3fb950;
+  --color-risk-medium: #d29922;
+  --color-risk-high: #db6d28;
+  --color-risk-critical: #f85149;
 }
 
 body {
@@ -28,23 +29,22 @@ body {
   color: var(--color-sp-text);
 }
 
-/* Hero background: dark base + vignette */
+/* Background */
 .sp-hero-bg {
-  background:
-    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5) 100%),
-    #0a0a0a;
+  background: #0d1117;
 }
 
+/* Flat panel card — replaces glass-card */
 .glass-card {
-  background-color: #111111;
-  border: 1px solid #2a2a2a;
+  background-color: #161b22;
+  border: 1px solid #30363d;
 }
 
 /* Fade in animation */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -53,7 +53,7 @@ body {
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.5s ease-out forwards;
+  animation: fadeInUp 0.3s ease-out forwards;
 }
 
 /* Pulse ring animation */

@@ -50,10 +50,10 @@ export default function HomePage() {
   };
 
   const verdictColor = {
-    Safe: "bg-green-500/10 text-green-400 border-green-500/30",
-    Suspicious: "bg-sp-red/10 text-sp-red border-sp-red/30",
-    "Likely Phishing": "bg-sp-red/10 text-sp-red border-sp-red/30",
-    Phishing: "bg-sp-red/10 text-sp-red border-sp-red/30",
+    Safe: "bg-[#3fb950]/10 text-[#3fb950] border-[#3fb950]/30",
+    Suspicious: "bg-[#d29922]/10 text-[#d29922] border-[#d29922]/30",
+    "Likely Phishing": "bg-[#db6d28]/10 text-[#db6d28] border-[#db6d28]/30",
+    Phishing: "bg-[#f85149]/10 text-[#f85149] border-[#f85149]/30",
   };
 
   return (
@@ -62,21 +62,21 @@ export default function HomePage() {
       {!result && (
         <div className="text-center mb-10 animate-fade-in-up">
           <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-2xl bg-sp-red/10">
-              <Shield className="w-12 h-12 text-sp-red" />
+            <div className="p-3 rounded-md bg-[#f85149]/10">
+              <Shield className="w-10 h-10 text-[#f85149]" />
             </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold mb-2 text-white">
-            SafeLink
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-[#e6edf3] font-mono tracking-tight">
+            SAFELINK
           </h1>
-          <p className="text-sp-text text-lg">
-            Enterprise-grade phishing URL detection
+          <p className="text-[#8b949e] text-sm font-mono">
+            Enterprise phishing URL detection
           </p>
         </div>
       )}
 
       {/* Scan input */}
-      <div className={result ? "mb-8" : "mb-8"}>
+      <div className="mb-8">
         <ScanInput onScan={handleScan} loading={loading} />
       </div>
 
@@ -85,7 +85,7 @@ export default function HomePage() {
 
       {/* Error */}
       {error && !loading && (
-        <div className="max-w-md mx-auto p-4 rounded-xl bg-sp-red/10 border border-sp-red/30 text-sp-red text-sm text-center animate-fade-in-up">
+        <div className="max-w-md mx-auto p-3 rounded-md bg-[#f85149]/10 border border-[#f85149]/30 text-[#f85149] text-xs font-mono text-center animate-fade-in-up">
           {error}
         </div>
       )}
@@ -98,7 +98,7 @@ export default function HomePage() {
       {/* Recent scans */}
       {!result && !loading && recentScans.length > 0 && (
         <div className="mt-12 animate-fade-in-up">
-          <h3 className="text-sm font-semibold text-sp-red uppercase tracking-wider mb-3 text-center">
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-[#8b949e] mb-3 text-center">
             Recent Scans
           </h3>
           <div className="flex flex-wrap justify-center gap-2">
@@ -113,7 +113,7 @@ export default function HomePage() {
                 <button
                   key={scan.id}
                   onClick={() => navigate(`/scan/${scan.id}`)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors hover:brightness-125 ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-xs font-mono transition-colors hover:brightness-125 ${
                     verdictColor[scan.verdict] || verdictColor.Suspicious
                   }`}
                 >

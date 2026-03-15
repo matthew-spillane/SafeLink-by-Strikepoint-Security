@@ -1,18 +1,12 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Server, AlertTriangle, Bug } from "lucide-react";
+import { ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 
-function Badge({ children, color = "default" }) {
-  const colors = {
-    red: "bg-sp-red/10 text-sp-red",
-    green: "bg-green-500/10 text-green-400",
-    amber: "bg-amber-500/10 text-amber-400",
-    blue: "bg-blue-500/10 text-blue-400",
-    default: "bg-white/5 text-sp-text",
-  };
+function Row({ label, children, border = true }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colors[color] || colors.default}`}>
-      {children}
-    </span>
+    <div className={`flex items-start justify-between py-2 ${border ? "border-b border-[#30363d]" : ""}`}>
+      <span className="text-xs uppercase text-[#8b949e] shrink-0 w-36">{label}</span>
+      <div className="text-sm font-mono text-[#e6edf3] text-right">{children}</div>
+    </div>
   );
 }
 
@@ -20,121 +14,117 @@ const warningTags = new Set(["vpn", "tor", "proxy", "scanner", "compromised", "c
 
 export default function HostIntelCard({ data }) {
   const [expanded, setExpanded] = useState(false);
-
   const isUnavailable = !data || data.status === "error" || data.status === "skipped";
   const hasWarningTags = data?.tags && data.tags.some((t) => warningTags.has(t.toLowerCase()));
+  const cveCount = data?.cves?.length || 0;
 
   return (
-    <div className="glass-card bg-[#111111] rounded-xl overflow-hidden animate-fade-in-up">
+    <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up">
+      {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 p-4 text-left hover:bg-sp-card-light transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 border-l-2 border-l-[#f85149] hover:bg-[#1c2128] transition-colors"
       >
-        <div className="p-2 rounded-lg bg-cyan-500/10">
-          <Server className="w-5 h-5 text-cyan-400" />
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-widest text-[#8b949e]">
+            Host Intelligence
+          </span>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm text-white">Host Intelligence</span>
-            {isUnavailable ? (
-              <Badge>unavailable</Badge>
-            ) : (
-              <>
-                {hasWarningTags && <Badge color="amber">Warning Tags</Badge>}
-                {data.cves && data.cves.length > 0 && (
-                  <Badge color="red">{data.cves.length} CVE{data.cves.length !== 1 ? "s" : ""}</Badge>
-                )}
-                {!hasWarningTags && (!data.cves || data.cves.length === 0) && (
-                  <Badge color="green">Clean</Badge>
-                )}
-              </>
-            )}
-          </div>
-          <p className="text-sm text-sp-text mt-0.5 truncate">
-            {isUnavailable
-              ? "Shodan host data not available for this scan"
-              : data.ip
-              ? `${data.ip}${data.asn ? ` · ${data.asn}` : ""}`
-              : "Host infrastructure analysis"}
-          </p>
+        <div className="flex items-center gap-2">
+          {isUnavailable ? (
+            <span className="text-xs font-mono px-2 py-0.5 rounded-sm bg-[#1c2128] text-[#8b949e] border border-[#30363d]">unavailable</span>
+          ) : (
+            <>
+              {hasWarningTags && (
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#d29922]/10 text-[#d29922]">TAGS</span>
+              )}
+              {cveCount > 0 && (
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#f85149]/10 text-[#f85149]">{cveCount} CVE{cveCount !== 1 ? "S" : ""}</span>
+              )}
+              {!hasWarningTags && cveCount === 0 && (
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#3fb950]/10 text-[#3fb950]">CLEAN</span>
+              )}
+            </>
+          )}
+          {data?.ip && !isUnavailable && (
+            <span className="text-xs font-mono text-[#8b949e]">{data.ip}</span>
+          )}
+          {expanded ? <ChevronUp className="w-3.5 h-3.5 text-[#8b949e]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#8b949e]" />}
         </div>
-        {expanded ? (
-          <ChevronUp className="w-4 h-4 text-sp-muted shrink-0" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-sp-muted shrink-0" />
-        )}
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 border-t border-sp-border">
+        <div className="border-t border-[#30363d] px-4 py-1">
           {isUnavailable ? (
-            <div className="flex items-center gap-2 py-4 text-sp-muted">
+            <div className="flex items-center gap-2 py-4 text-[#8b949e]">
               <AlertTriangle className="w-4 h-4 opacity-50" />
-              <p className="text-sm">{data?.error || "Shodan InternetDB data could not be retrieved"}</p>
+              <span className="text-xs font-mono">{data?.error || "Shodan InternetDB data could not be retrieved"}</span>
             </div>
           ) : (
-            <div className="mt-3 space-y-4">
-              {/* IP & ASN */}
-              <div className="text-xs text-sp-text bg-[#0d0d0d] rounded-lg p-3 space-y-1">
-                {data.ip && <p><span className="text-sp-muted">IP:</span> {data.ip}</p>}
-                {data.asn && <p><span className="text-sp-muted">ASN:</span> {data.asn}</p>}
-                {data.org && <p><span className="text-sp-muted">Org:</span> {data.org}</p>}
-                {data.hostnames && data.hostnames.length > 0 && (
-                  <p><span className="text-sp-muted">Hostnames:</span> {data.hostnames.join(", ")}</p>
-                )}
-              </div>
+            <>
+              {data.ip && <Row label="IP Address">{data.ip}</Row>}
+              {data.asn && <Row label="ASN">{data.asn}</Row>}
+              {data.org && <Row label="Organization">{data.org}</Row>}
+              {data.hostnames && data.hostnames.length > 0 && (
+                <Row label="Hostnames">
+                  <div className="space-y-0.5">
+                    {data.hostnames.map((h, i) => <div key={i}>{h}</div>)}
+                  </div>
+                </Row>
+              )}
 
-              {/* Open Ports */}
               {data.ports && data.ports.length > 0 && (
-                <div>
-                  <p className="text-xs text-sp-muted mb-1.5 uppercase tracking-wider">Open Ports</p>
-                  <div className="flex flex-wrap gap-1.5">
+                <Row label="Open Ports">
+                  <div className="flex flex-wrap gap-1 justify-end">
                     {data.ports.map((port) => (
-                      <span
-                        key={port}
-                        className="px-2 py-0.5 rounded text-xs font-mono bg-white/5 text-sp-text border border-sp-border"
-                      >
+                      <span key={port} className="text-xs font-mono px-1.5 py-0.5 rounded-sm bg-[#0d1117] text-[#8b949e] border border-[#30363d]">
                         {port}
                       </span>
                     ))}
                   </div>
-                </div>
+                </Row>
               )}
 
-              {/* Host Tags */}
               {data.tags && data.tags.length > 0 && (
-                <div>
-                  <p className="text-xs text-sp-muted mb-1.5 uppercase tracking-wider">Host Tags</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {data.tags.map((tag) => (
-                      <Badge key={tag} color={warningTags.has(tag.toLowerCase()) ? "amber" : "default"}>
-                        {tag}
-                      </Badge>
-                    ))}
+                <Row label="Host Tags">
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {data.tags.map((tag) => {
+                      const isWarn = warningTags.has(tag.toLowerCase());
+                      return (
+                        <span
+                          key={tag}
+                          className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded-sm ${
+                            isWarn
+                              ? "bg-[#d29922]/10 text-[#d29922]"
+                              : "bg-[#1c2128] text-[#8b949e] border border-[#30363d]"
+                          }`}
+                        >
+                          {tag}
+                        </span>
+                      );
+                    })}
                   </div>
-                </div>
+                </Row>
               )}
 
-              {/* CVEs */}
               {data.cves && data.cves.length > 0 && (
-                <div>
-                  <p className="text-xs text-sp-muted mb-1.5 uppercase tracking-wider flex items-center gap-1">
-                    <Bug className="w-3 h-3" /> Known Vulnerabilities
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
+                <Row label="CVEs" border={false}>
+                  <div className="flex flex-wrap gap-1 justify-end">
                     {data.cves.map((cve) => (
-                      <Badge key={cve} color="red">{cve}</Badge>
+                      <span key={cve} className="text-xs font-mono font-bold px-1.5 py-0.5 rounded-sm bg-[#f85149]/10 text-[#f85149]">
+                        {cve}
+                      </span>
                     ))}
                   </div>
-                </div>
+                </Row>
               )}
-            </div>
+            </>
           )}
 
           {/* Attribution */}
-          <div className="mt-3 flex justify-end">
-            <span className="text-[10px] text-sp-muted/60 flex items-center gap-1">
-              <Server className="w-3 h-3" /> Data from Shodan
+          <div className="flex justify-end pt-2 pb-1">
+            <span className="text-xs font-mono text-[#484f58] px-2 py-0.5 rounded-sm border border-[#30363d]">
+              Shodan InternetDB
             </span>
           </div>
         </div>

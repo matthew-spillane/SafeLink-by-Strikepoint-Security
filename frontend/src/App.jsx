@@ -9,7 +9,7 @@ import HistoryPage from "./pages/HistoryPage";
 export default function App() {
   return (
     <ThemeProvider>
-      <div className="min-h-screen sp-hero-bg text-sp-text">
+      <div className="min-h-screen sp-hero-bg text-[#e6edf3]">
         <Header />
         <main className="max-w-5xl mx-auto px-4 pb-16">
           <Routes>

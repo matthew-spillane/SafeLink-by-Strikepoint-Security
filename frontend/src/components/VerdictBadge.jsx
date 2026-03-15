@@ -1,38 +1,17 @@
 import React from "react";
-import { ShieldCheck, ShieldAlert, ShieldX, AlertTriangle } from "lucide-react";
 
 const config = {
-  Safe: {
-    bg: "bg-green-500/10 border-green-500/30",
-    text: "text-green-400",
-    Icon: ShieldCheck,
-  },
-  Suspicious: {
-    bg: "bg-sp-red/10 border-sp-red/30",
-    text: "text-sp-red",
-    Icon: AlertTriangle,
-  },
-  "Likely Phishing": {
-    bg: "bg-sp-red/10 border-sp-red/30",
-    text: "text-sp-red",
-    Icon: ShieldAlert,
-  },
-  Phishing: {
-    bg: "bg-sp-red/10 border-sp-red/30",
-    text: "text-sp-red",
-    Icon: ShieldX,
-  },
+  Safe: { bg: "bg-[#3fb950]/10", text: "text-[#3fb950]", border: "border-[#3fb950]/30" },
+  Suspicious: { bg: "bg-[#d29922]/10", text: "text-[#d29922]", border: "border-[#d29922]/30" },
+  "Likely Phishing": { bg: "bg-[#db6d28]/10", text: "text-[#db6d28]", border: "border-[#db6d28]/30" },
+  Phishing: { bg: "bg-[#f85149]/10", text: "text-[#f85149]", border: "border-[#f85149]/30" },
 };
 
 export default function VerdictBadge({ verdict }) {
   const c = config[verdict] || config.Suspicious;
-  const { Icon } = c;
   return (
-    <div
-      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold ${c.bg} ${c.text}`}
-    >
-      <Icon className="w-5 h-5" />
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-sm border text-xs font-bold font-mono uppercase tracking-wide ${c.bg} ${c.text} ${c.border}`}>
       {verdict}
-    </div>
+    </span>
   );
 }

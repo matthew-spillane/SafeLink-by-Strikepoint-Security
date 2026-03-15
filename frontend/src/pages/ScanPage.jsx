@@ -22,8 +22,8 @@ export default function ScanPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center gap-4 py-24">
-        <Loader2 className="w-8 h-8 text-sp-red animate-spin" />
-        <p className="text-sp-text text-sm">Loading scan results...</p>
+        <Loader2 className="w-6 h-6 text-[#f85149] animate-spin" />
+        <p className="text-[#8b949e] text-xs font-mono">Loading scan results...</p>
       </div>
     );
   }
@@ -31,12 +31,12 @@ export default function ScanPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center gap-4 py-24">
-        <div className="p-4 rounded-xl bg-sp-red/10 border border-sp-red/30 text-sp-red text-sm text-center max-w-md">
+        <div className="p-3 rounded-md bg-[#f85149]/10 border border-[#f85149]/30 text-[#f85149] text-xs font-mono text-center max-w-md">
           {error}
         </div>
         <button
           onClick={() => navigate("/")}
-          className="text-sm text-sp-red hover:underline"
+          className="text-xs font-mono text-[#f85149] hover:underline"
         >
           Go back to scanner
         </button>
@@ -45,7 +45,7 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="pt-8">
+    <div className="pt-6">
       <ResultsDashboard result={result} onReset={() => navigate("/")} />
     </div>
   );
