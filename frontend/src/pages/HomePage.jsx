@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Shield, Loader2 } from "lucide-react";
+import { Shield } from "lucide-react";
 import ScanInput from "../components/ScanInput";
+import ScanProgress from "../components/ScanProgress";
 import ResultsDashboard from "../components/ResultsDashboard";
 import { scanUrl, getHistory } from "../api";
 
@@ -80,15 +81,7 @@ export default function HomePage() {
       </div>
 
       {/* Loading state */}
-      {loading && (
-        <div className="flex flex-col items-center gap-4 py-16 animate-fade-in-up">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full border-4 border-sp-red/20 animate-pulse-ring" />
-            <Loader2 className="w-8 h-8 text-sp-red animate-spin absolute top-4 left-4" />
-          </div>
-          <p className="text-sp-text text-sm">Analyzing URL across 10 security checks...</p>
-        </div>
-      )}
+      {loading && <ScanProgress />}
 
       {/* Error */}
       {error && !loading && (
