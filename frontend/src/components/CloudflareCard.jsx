@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Cloud, ChevronDown, ChevronUp, ArrowRight, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, ArrowRight, AlertTriangle } from "lucide-react";
 
 function StatusPill({ value, trueLabel, falseLabel }) {
   return value ? (
@@ -22,6 +22,17 @@ export default function CloudflareCard({ data }) {
   const [expanded, setExpanded] = useState(false);
   const isUnavailable = !data || data.status === "error" || data.status === "skipped";
 
+  // Map backend field names
+  const isMalicious = data?.malicious;
+  const isPhishing = data?.phishing_detected;
+  const categories = data?.domain_categories;
+  const radarRank = data?.radar_rank;
+  const redirectChain = data?.redirect_chain;
+  const certs = data?.certificates;
+  const technologies = data?.technologies;
+  const hostingCountry = data?.hosting_country;
+  const hostingAsn = data?.hosting_asn;
+
   return (
     <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up h-full">
       {/* Header */}
@@ -39,8 +50,8 @@ export default function CloudflareCard({ data }) {
             <span className="text-xs font-mono px-2 py-0.5 rounded-sm bg-[#1c2128] text-[#8b949e] border border-[#30363d]">unavailable</span>
           ) : (
             <>
-              <StatusPill value={data.is_malicious} trueLabel="MALICIOUS" falseLabel="CLEAN" />
-              {data.is_phishing && <StatusPill value={true} trueLabel="PHISHING" falseLabel="" />}
+              <StatusPill value={isMalicious} trueLabel="MALICIOUS" falseLabel="CLEAN" />
+              {isPhishing && <StatusPill value={true} trueLabel="PHISHING" falseLabel="" />}
             </>
           )}
           {expanded ? <ChevronUp className="w-3.5 h-3.5 text-[#8b949e]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#8b949e]" />}
@@ -56,30 +67,32 @@ export default function CloudflareCard({ data }) {
             </div>
           ) : (
             <>
-              <Row label="Malicious"><StatusPill value={data.is_malicious} trueLabel="TRUE" falseLabel="FALSE" /></Row>
-              <Row label="Phishing"><StatusPill value={data.is_phishing} trueLabel="TRUE" falseLabel="FALSE" /></Row>
-              {data.radar_rank && <Row label="Radar Rank"><span>#{data.radar_rank}</span></Row>}
+              <Row label="Malicious"><StatusPill value={isMalicious} trueLabel="TRUE" falseLabel="FALSE" /></Row>
+              <Row label="Phishing"><StatusPill value={isPhishing} trueLabel="TRUE" falseLabel="FALSE" /></Row>
+              {radarRank != null && <Row label="Radar Rank"><span>#{radarRank}</span></Row>}
+              {hostingCountry && <Row label="Hosting Country">{hostingCountry}</Row>}
+              {hostingAsn && <Row label="Hosting ASN">{hostingAsn}</Row>}
 
-              {data.categories && data.categories.length > 0 && (
+              {categories && categories.length > 0 && (
                 <Row label="Categories">
                   <div className="flex flex-wrap gap-1 justify-end">
-                    {data.categories.map((cat, i) => (
+                    {categories.map((cat, i) => (
                       <span key={i} className="text-xs font-mono px-1.5 py-0.5 rounded-sm bg-[#1c2128] text-[#8b949e] border border-[#30363d]">{cat}</span>
                     ))}
                   </div>
                 </Row>
               )}
 
-              {data.redirect_chain && data.redirect_chain.length > 1 && (
+              {redirectChain && redirectChain.length > 1 && (
                 <Row label="Redirects">
                   <div className="flex flex-wrap items-center gap-1 justify-end">
-                    {data.redirect_chain.map((url, i) => {
+                    {redirectChain.map((url, i) => {
                       let hostname;
                       try { hostname = new URL(url).hostname; } catch { hostname = url; }
                       return (
                         <React.Fragment key={i}>
                           <span className="text-xs font-mono text-[#8b949e]">{hostname}</span>
-                          {i < data.redirect_chain.length - 1 && <ArrowRight className="w-3 h-3 text-[#30363d]" />}
+                          {i < redirectChain.length - 1 && <ArrowRight className="w-3 h-3 text-[#30363d]" />}
                         </React.Fragment>
                       );
                     })}
@@ -87,18 +100,18 @@ export default function CloudflareCard({ data }) {
                 </Row>
               )}
 
-              {data.tls && (
+              {certs && typeof certs === "object" && (
                 <>
-                  {data.tls.issuer && <Row label="TLS Issuer">{data.tls.issuer}</Row>}
-                  {data.tls.subject && <Row label="TLS Subject">{data.tls.subject}</Row>}
-                  {data.tls.validity && <Row label="TLS Validity">{data.tls.validity}</Row>}
+                  {certs.issuer && <Row label="TLS Issuer">{certs.issuer}</Row>}
+                  {certs.subject && <Row label="TLS Subject">{certs.subject}</Row>}
+                  {certs.validity && <Row label="TLS Validity">{certs.validity}</Row>}
                 </>
               )}
 
-              {data.technologies && data.technologies.length > 0 && (
+              {technologies && technologies.length > 0 && (
                 <Row label="Technologies" border={false}>
                   <div className="flex flex-wrap gap-1 justify-end">
-                    {data.technologies.map((tech, i) => (
+                    {technologies.map((tech, i) => (
                       <span key={i} className="text-xs font-mono px-1.5 py-0.5 rounded-sm bg-[#1c2128] text-[#8b949e] border border-[#30363d]">{tech}</span>
                     ))}
                   </div>

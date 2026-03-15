@@ -15,8 +15,19 @@ const warningTags = new Set(["vpn", "tor", "proxy", "scanner", "compromised", "c
 export default function HostIntelCard({ data }) {
   const [expanded, setExpanded] = useState(false);
   const isUnavailable = !data || data.status === "error" || data.status === "skipped";
-  const hasWarningTags = data?.tags && data.tags.some((t) => warningTags.has(t.toLowerCase()));
-  const cveCount = data?.cves?.length || 0;
+
+  // Map backend field names
+  const ip = data?.ip;
+  const ports = data?.ports;
+  const tags = data?.tags;
+  const vulns = data?.vulns;          // backend uses "vulns" not "cves"
+  const hostnames = data?.hostnames;
+  const cpes = data?.cpes;
+  const highRiskTags = data?.high_risk_tags;
+
+  const hasWarningTags = tags && tags.some((t) => warningTags.has(t.toLowerCase()));
+  const hasHighRiskTags = highRiskTags && highRiskTags.length > 0;
+  const vulnCount = vulns?.length || 0;
 
   return (
     <div className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden animate-fade-in-up h-full">
@@ -35,19 +46,19 @@ export default function HostIntelCard({ data }) {
             <span className="text-xs font-mono px-2 py-0.5 rounded-sm bg-[#1c2128] text-[#8b949e] border border-[#30363d]">unavailable</span>
           ) : (
             <>
-              {hasWarningTags && (
+              {(hasWarningTags || hasHighRiskTags) && (
                 <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#d29922]/10 text-[#d29922]">TAGS</span>
               )}
-              {cveCount > 0 && (
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#f85149]/10 text-[#f85149]">{cveCount} CVE{cveCount !== 1 ? "S" : ""}</span>
+              {vulnCount > 0 && (
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#f85149]/10 text-[#f85149]">{vulnCount} CVE{vulnCount !== 1 ? "S" : ""}</span>
               )}
-              {!hasWarningTags && cveCount === 0 && (
+              {!hasWarningTags && !hasHighRiskTags && vulnCount === 0 && (
                 <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#3fb950]/10 text-[#3fb950]">CLEAN</span>
               )}
             </>
           )}
-          {data?.ip && !isUnavailable && (
-            <span className="text-xs font-mono text-[#8b949e]">{data.ip}</span>
+          {ip && !isUnavailable && (
+            <span className="text-xs font-mono text-[#8b949e]">{ip}</span>
           )}
           {expanded ? <ChevronUp className="w-3.5 h-3.5 text-[#8b949e]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#8b949e]" />}
         </div>
@@ -62,21 +73,20 @@ export default function HostIntelCard({ data }) {
             </div>
           ) : (
             <>
-              {data.ip && <Row label="IP Address">{data.ip}</Row>}
-              {data.asn && <Row label="ASN">{data.asn}</Row>}
-              {data.org && <Row label="Organization">{data.org}</Row>}
-              {data.hostnames && data.hostnames.length > 0 && (
+              {ip && <Row label="IP Address">{ip}</Row>}
+
+              {hostnames && hostnames.length > 0 && (
                 <Row label="Hostnames">
                   <div className="space-y-0.5">
-                    {data.hostnames.map((h, i) => <div key={i}>{h}</div>)}
+                    {hostnames.map((h, i) => <div key={i}>{h}</div>)}
                   </div>
                 </Row>
               )}
 
-              {data.ports && data.ports.length > 0 && (
+              {ports && ports.length > 0 && (
                 <Row label="Open Ports">
                   <div className="flex flex-wrap gap-1 justify-end">
-                    {data.ports.map((port) => (
+                    {ports.map((port) => (
                       <span key={port} className="text-xs font-mono px-1.5 py-0.5 rounded-sm bg-[#0d1117] text-[#8b949e] border border-[#30363d]">
                         {port}
                       </span>
@@ -85,10 +95,10 @@ export default function HostIntelCard({ data }) {
                 </Row>
               )}
 
-              {data.tags && data.tags.length > 0 && (
+              {tags && tags.length > 0 && (
                 <Row label="Host Tags">
                   <div className="flex flex-wrap gap-1 justify-end">
-                    {data.tags.map((tag) => {
+                    {tags.map((tag) => {
                       const isWarn = warningTags.has(tag.toLowerCase());
                       return (
                         <span
@@ -107,12 +117,36 @@ export default function HostIntelCard({ data }) {
                 </Row>
               )}
 
-              {data.cves && data.cves.length > 0 && (
-                <Row label="CVEs" border={false}>
+              {highRiskTags && highRiskTags.length > 0 && (
+                <Row label="High Risk Tags">
                   <div className="flex flex-wrap gap-1 justify-end">
-                    {data.cves.map((cve) => (
+                    {highRiskTags.map((tag) => (
+                      <span key={tag} className="text-xs font-mono font-bold px-1.5 py-0.5 rounded-sm bg-[#f85149]/10 text-[#f85149]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </Row>
+              )}
+
+              {vulns && vulns.length > 0 && (
+                <Row label="Vulnerabilities">
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {vulns.map((cve) => (
                       <span key={cve} className="text-xs font-mono font-bold px-1.5 py-0.5 rounded-sm bg-[#f85149]/10 text-[#f85149]">
                         {cve}
+                      </span>
+                    ))}
+                  </div>
+                </Row>
+              )}
+
+              {cpes && cpes.length > 0 && (
+                <Row label="CPEs" border={false}>
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {cpes.map((cpe, i) => (
+                      <span key={i} className="text-xs font-mono px-1.5 py-0.5 rounded-sm bg-[#1c2128] text-[#8b949e] border border-[#30363d]">
+                        {cpe}
                       </span>
                     ))}
                   </div>

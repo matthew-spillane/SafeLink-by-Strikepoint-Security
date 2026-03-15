@@ -14,8 +14,23 @@ import ThreatIntelCard from "./ThreatIntelCard";
 import ScanSummaryPanel from "./ScanSummaryPanel";
 import ModuleStatusPanel from "./ModuleStatusPanel";
 
-// Check names that are consolidated into ThreatIntelCard
-const threatIntelCheckNames = new Set(["VirusTotal", "Google Safe Browsing"]);
+// Check names consolidated into dedicated cards
+const dedicatedCardNames = new Set([
+  "VirusTotal",
+  "Google Safe Browsing",
+  "Cloudflare Radar",
+  "Shodan InternetDB",
+]);
+
+// Extract a CheckResult from the checks array by name, returning
+// { status, details, ... } or null if not found.
+function findCheck(checks, name) {
+  const check = checks.find((c) => c.name === name);
+  if (!check) return null;
+  // Merge details up so card components can read fields directly
+  const details = check.details && typeof check.details === "object" ? check.details : {};
+  return { ...details, status: check.status, summary: check.summary };
+}
 
 export default function ResultsDashboard({ result, onReset }) {
   const copyLink = () => {
@@ -23,10 +38,14 @@ export default function ResultsDashboard({ result, onReset }) {
     navigator.clipboard.writeText(link);
   };
 
-  // Remaining checks not covered by the new consolidated cards
+  // Remaining checks not covered by dedicated cards
   const remainingChecks = result.checks.filter(
-    (c) => !threatIntelCheckNames.has(c.name)
+    (c) => !dedicatedCardNames.has(c.name)
   );
+
+  // Extract module data from checks array
+  const cloudflareData = findCheck(result.checks, "Cloudflare Radar");
+  const shodanData = findCheck(result.checks, "Shodan InternetDB");
 
   const moduleCount = result.checks.length;
 
@@ -73,13 +92,13 @@ export default function ResultsDashboard({ result, onReset }) {
       {/* ── Row 3: Three equal columns — Cloudflare / IPQS / Shodan ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="h-full">
-          <CloudflareCard data={result.cloudflare_radar} />
+          <CloudflareCard data={cloudflareData} />
         </div>
         <div className="h-full">
           <URLReputationCard data={result.ipqualityscore} />
         </div>
         <div className="h-full">
-          <HostIntelCard data={result.shodan} />
+          <HostIntelCard data={shodanData} />
         </div>
       </div>
 
