@@ -14,22 +14,28 @@ import ThreatIntelCard from "./ThreatIntelCard";
 import ScanSummaryPanel from "./ScanSummaryPanel";
 import ModuleStatusPanel from "./ModuleStatusPanel";
 
-// Check names consolidated into dedicated cards
+// Check names/module ids consolidated into dedicated cards
 const dedicatedCardNames = new Set([
   "VirusTotal",
   "Google Safe Browsing",
   "Cloudflare Radar",
   "Shodan InternetDB",
+  "cloudflare_radar",
+  "shodan_internetdb",
 ]);
 
-// Extract a CheckResult from the checks array by name, returning
-// { status, details, ... } or null if not found.
-function findCheck(checks, name) {
-  const check = checks.find((c) => c.name === name);
+// Extract a module result from the checks array by name or module id.
+// Handles both legacy CheckResult shape ({ name, status, details })
+// and new module shape ({ module, status, findings }).
+function findCheck(checks, name, moduleId) {
+  const check = checks.find(
+    (c) => c.name === name || c.module === moduleId
+  );
   if (!check) return null;
-  // Merge details up so card components can read fields directly
-  const details = check.details && typeof check.details === "object" ? check.details : {};
-  return { ...details, status: check.status, summary: check.summary };
+  // New modules use "findings", legacy uses "details"
+  const payload = check.findings || check.details;
+  const data = payload && typeof payload === "object" ? payload : {};
+  return { ...data, status: check.status, summary: check.summary };
 }
 
 export default function ResultsDashboard({ result, onReset }) {
@@ -40,12 +46,12 @@ export default function ResultsDashboard({ result, onReset }) {
 
   // Remaining checks not covered by dedicated cards
   const remainingChecks = result.checks.filter(
-    (c) => !dedicatedCardNames.has(c.name)
+    (c) => !dedicatedCardNames.has(c.name) && !dedicatedCardNames.has(c.module)
   );
 
   // Extract module data from checks array
-  const cloudflareData = findCheck(result.checks, "Cloudflare Radar");
-  const shodanData = findCheck(result.checks, "Shodan InternetDB");
+  const cloudflareData = findCheck(result.checks, "Cloudflare Radar", "cloudflare_radar");
+  const shodanData = findCheck(result.checks, "Shodan InternetDB", "shodan_internetdb");
 
   const moduleCount = result.checks.length;
 

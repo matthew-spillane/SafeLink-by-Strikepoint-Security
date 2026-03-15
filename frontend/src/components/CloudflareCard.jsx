@@ -20,7 +20,7 @@ function Row({ label, children, border = true }) {
 
 export default function CloudflareCard({ data }) {
   const [expanded, setExpanded] = useState(false);
-  const isUnavailable = !data || data.status === "error" || data.status === "skipped";
+  const isUnavailable = !data || data.status === "error" || data.status === "skipped" || data.status === "unavailable";
 
   // Map backend field names
   const isMalicious = data?.malicious;

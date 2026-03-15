@@ -14,7 +14,7 @@ const warningTags = new Set(["vpn", "tor", "proxy", "scanner", "compromised", "c
 
 export default function HostIntelCard({ data }) {
   const [expanded, setExpanded] = useState(false);
-  const isUnavailable = !data || data.status === "error" || data.status === "skipped";
+  const isUnavailable = !data || data.status === "error" || data.status === "skipped" || data.status === "unavailable";
 
   // Map backend field names
   const ip = data?.ip;
