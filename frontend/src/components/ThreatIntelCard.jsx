@@ -27,7 +27,7 @@ export default function ThreatIntelCard({ checks, otxData }) {
   const vtFlagged = vtMalicious + vtSuspicious;
 
   const gsbFail = gsbCheck?.status === "fail";
-  const otxUnavailable = !otxData || otxData.status === "error" || otxData.status === "skipped";
+  const otxUnavailable = !otxData || otxData.status === "error" || otxData.status === "skipped" || otxData.status === "unavailable";
   const pulseCount = otxData?.pulse_count ?? 0;
 
   const hasThreats = vtFlagged > 0 || gsbFail || pulseCount > 0;
@@ -46,7 +46,7 @@ export default function ThreatIntelCard({ checks, otxData }) {
     {
       name: "AlienVault OTX",
       status: otxUnavailable ? "skipped" : pulseCount > 0 ? "warning" : "pass",
-      detail: otxUnavailable ? "Unavailable" : pulseCount > 0 ? `${pulseCount} pulse${pulseCount !== 1 ? "s" : ""}` : "No pulses",
+      detail: otxUnavailable ? "Unavailable" : pulseCount > 0 ? `${pulseCount} pulse${pulseCount !== 1 ? "s" : ""}` : "No threats found",
     },
   ];
 

@@ -26,6 +26,7 @@ from app.services.analyzers import (
     check_page_content,
     check_cloudflare_radar,
     check_shodan_internetdb,
+    check_alienvault_otx,
     check_urlscan,
 )
 
@@ -95,6 +96,11 @@ def calculate_risk_score(checks: list[CheckResult]) -> int:
             vuln_count = len(details.get("vulns", []))
             if vuln_count > 0:
                 score += min(vuln_count * 2, 10)
+        elif check.name == "AlienVault OTX":
+            details = check.details if isinstance(check.details, dict) else {}
+            pulse_count = details.get("pulse_count", 0)
+            if pulse_count > 0:
+                score += min(pulse_count * 3, 15)
 
     return min(score, 100)
 
@@ -273,6 +279,7 @@ async def run_scan(url: str, db: Session, *, session_id: str | None = None) -> S
             check_page_content(url),
             check_cloudflare_radar(url),
             check_shodan_internetdb(url),
+            check_alienvault_otx(url),
         ),
         check_urlscan(url),
     )

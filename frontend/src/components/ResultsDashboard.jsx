@@ -22,6 +22,8 @@ const dedicatedCardNames = new Set([
   "Shodan InternetDB",
   "cloudflare_radar",
   "shodan_internetdb",
+  "AlienVault OTX",
+  "alienvault_otx",
 ]);
 
 // Extract a module result from the checks array by name or module id.
@@ -52,6 +54,7 @@ export default function ResultsDashboard({ result, onReset }) {
   // Extract module data from checks array
   const cloudflareData = findCheck(result.checks, "Cloudflare Radar", "cloudflare_radar");
   const shodanData = findCheck(result.checks, "Shodan InternetDB", "shodan_internetdb");
+  const otxData = findCheck(result.checks, "AlienVault OTX", "alienvault_otx");
 
   const moduleCount = result.checks.length;
 
@@ -111,7 +114,7 @@ export default function ResultsDashboard({ result, onReset }) {
       {/* ── Row 4: Threat Intel (70%) + Module Status (30%) ── */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         <div className="md:col-span-8">
-          <ThreatIntelCard checks={result.checks} otxData={result.alienvault_otx} />
+          <ThreatIntelCard checks={result.checks} otxData={otxData} />
         </div>
         <div className="md:col-span-4">
           <ModuleStatusPanel checks={result.checks} />

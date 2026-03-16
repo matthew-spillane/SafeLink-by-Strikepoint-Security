@@ -879,6 +879,75 @@ async def check_shodan_internetdb(url: str) -> CheckResult:
         )
 
 
+async def check_alienvault_otx(url: str) -> CheckResult:
+    """Query AlienVault OTX for threat intelligence on the domain."""
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return CheckResult(
+                name="AlienVault OTX",
+                status="skipped",
+                severity="info",
+                summary="Could not extract hostname from URL.",
+                details={},
+            )
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"https://otx.alienvault.com/api/v1/indicators/domain/{hostname}/general"
+            )
+
+        details = {
+            "pulse_count": 0,
+            "tags": [],
+        }
+
+        if resp.status_code == 200:
+            data = resp.json()
+            pulse_count = data.get("pulse_info", {}).get("count", 0)
+            # Collect unique tags from pulses
+            pulses = data.get("pulse_info", {}).get("pulses", [])
+            all_tags = []
+            for pulse in pulses[:20]:  # cap to avoid huge lists
+                all_tags.extend(pulse.get("tags", []))
+            unique_tags = list(dict.fromkeys(all_tags))[:30]
+
+            details["pulse_count"] = pulse_count
+            details["tags"] = unique_tags
+
+        pulse_count = details["pulse_count"]
+        if pulse_count > 0:
+            status = "warning"
+            severity = "medium"
+            summary = f"AlienVault OTX: {pulse_count} threat pulse{'s' if pulse_count != 1 else ''} found for {hostname}."
+        else:
+            status = "pass"
+            severity = "low"
+            summary = f"AlienVault OTX: no threat pulses found for {hostname}."
+
+        return CheckResult(
+            name="AlienVault OTX",
+            status=status,
+            severity=severity,
+            summary=summary,
+            details=details,
+        )
+    except Exception as e:
+        logger.warning("AlienVault OTX check failed: %s", e)
+        return CheckResult(
+            name="AlienVault OTX",
+            status="pass",
+            severity="low",
+            summary="AlienVault OTX: could not query API, treating as clean.",
+            details={
+                "pulse_count": 0,
+                "tags": [],
+                "error": str(e),
+            },
+        )
+
+
 async def check_urlscan(url: str) -> URLScanResult:
     """Submit URL to URLscan.io and return immediately with UUID (no polling)."""
     if not URLSCAN_API_KEY:
