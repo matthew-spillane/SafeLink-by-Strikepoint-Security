@@ -20,7 +20,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-[#0d1117]/95 border-b border-[#30363d]">
-      <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
         <a
           href="/"
           onClick={navTo("/")}
