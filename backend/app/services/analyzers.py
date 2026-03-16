@@ -696,7 +696,7 @@ async def check_page_content(url: str) -> CheckResult:
 
 
 async def check_cloudflare_radar(url: str) -> CheckResult:
-    """Query Cloudflare Radar URL Scanner for domain intelligence."""
+    """Submit URL to Cloudflare Radar URL Scanner and poll for results."""
     try:
         parsed = urlparse(url)
         hostname = parsed.hostname
@@ -709,71 +709,120 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
                 details={},
             )
 
-        async with httpx.AsyncClient(timeout=10) as client:
-            # Use Cloudflare Radar domain categorization endpoint (no key needed)
-            resp = await client.get(
-                f"https://radar.cloudflare.com/api/domains/{hostname}"
+        scan_api = "https://radar.cloudflare.com/api/scan"
+        poll_interval = 10  # seconds between polls
+        max_wait = 90       # total seconds before timeout
+
+        async with httpx.AsyncClient(timeout=15) as client:
+            # Step 1: Submit the URL for scanning
+            submit_resp = await client.post(scan_api, json={"url": url})
+
+            if submit_resp.status_code not in (200, 201, 202):
+                return CheckResult(
+                    name="Cloudflare Radar",
+                    status="warning",
+                    severity="medium",
+                    summary=f"Cloudflare Radar: scan submission returned HTTP {submit_resp.status_code}.",
+                    details={
+                        "malicious": None,
+                        "phishing_detected": None,
+                        "domain_categories": [],
+                        "radar_rank": 0,
+                        "redirect_chain": None,
+                        "certificates": None,
+                        "technologies": None,
+                        "hosting_country": None,
+                        "hosting_asn": None,
+                        "error": f"HTTP {submit_resp.status_code}",
+                    },
+                )
+
+            submit_data = submit_resp.json()
+            scan_id = (
+                submit_data.get("scanId")
+                or submit_data.get("scan_id")
+                or submit_data.get("id")
             )
 
-            details = {
-                "malicious": False,
-                "phishing_detected": False,
-                "domain_categories": [],
-                "radar_rank": 0,
-                "redirect_chain": None,
-                "certificates": None,
-                "technologies": None,
-                "hosting_country": None,
-                "hosting_asn": None,
-            }
+            if not scan_id:
+                # Some endpoints return results inline without a scan ID
+                # Try to parse as a direct result
+                return _parse_cloudflare_result(submit_data, hostname)
 
-            if resp.status_code == 200:
-                data = resp.json()
-                # Extract whatever fields the API returns
-                categories = data.get("categories", [])
-                rank = data.get("rank", data.get("popularity_rank", 0))
-                is_malicious = data.get("malicious", False)
-                is_phishing = data.get("phishing", False)
+            # Step 2: Poll until scan completes or timeout
+            elapsed = 0
+            scan_data = None
+            while elapsed < max_wait:
+                await asyncio.sleep(poll_interval)
+                elapsed += poll_interval
 
-                details["domain_categories"] = categories if isinstance(categories, list) else []
-                details["radar_rank"] = rank or 0
-                details["malicious"] = bool(is_malicious)
-                details["phishing_detected"] = bool(is_phishing)
-                details["hosting_country"] = data.get("hosting_country") or data.get("country")
-                details["hosting_asn"] = data.get("hosting_asn") or data.get("asn")
+                poll_resp = await client.get(f"{scan_api}/{scan_id}")
+                if poll_resp.status_code != 200:
+                    continue
 
-                # Technologies and certificates if present
-                if data.get("technologies"):
-                    details["technologies"] = data["technologies"]
-                if data.get("certificates"):
-                    details["certificates"] = data["certificates"]
+                poll_data = poll_resp.json()
+                scan_status = (
+                    poll_data.get("status")
+                    or poll_data.get("scan", {}).get("status")
+                )
 
-            status = "pass"
-            summary = f"Cloudflare Radar: domain '{hostname}' appears clean."
-            if details["malicious"]:
-                status = "fail"
-                summary = f"Cloudflare Radar: domain '{hostname}' flagged as malicious."
-            elif details["phishing_detected"]:
-                status = "fail"
-                summary = f"Cloudflare Radar: domain '{hostname}' flagged for phishing."
+                if scan_status in ("completed", "finished", "done"):
+                    scan_data = poll_data
+                    break
+                elif scan_status in ("error", "failed"):
+                    return CheckResult(
+                        name="Cloudflare Radar",
+                        status="warning",
+                        severity="medium",
+                        summary=f"Cloudflare Radar: scan failed for '{hostname}'.",
+                        details={
+                            "malicious": None,
+                            "phishing_detected": None,
+                            "domain_categories": [],
+                            "radar_rank": 0,
+                            "redirect_chain": None,
+                            "certificates": None,
+                            "technologies": None,
+                            "hosting_country": None,
+                            "hosting_asn": None,
+                            "error": "Cloudflare scan reported failure",
+                        },
+                    )
 
-            return CheckResult(
-                name="Cloudflare Radar",
-                status=status,
-                severity="high" if status == "fail" else "low",
-                summary=summary,
-                details=details,
-            )
+            # Step 3: Handle timeout — never return false safe
+            if scan_data is None:
+                return CheckResult(
+                    name="Cloudflare Radar",
+                    status="warning",
+                    severity="medium",
+                    summary=f"Cloudflare Radar: scan timed out after {max_wait}s for '{hostname}'.",
+                    details={
+                        "malicious": None,
+                        "phishing_detected": None,
+                        "domain_categories": [],
+                        "radar_rank": 0,
+                        "redirect_chain": None,
+                        "certificates": None,
+                        "technologies": None,
+                        "hosting_country": None,
+                        "hosting_asn": None,
+                        "timeout": True,
+                    },
+                )
+
+            # Step 4: Parse completed scan results
+            return _parse_cloudflare_result(scan_data, hostname)
+
     except Exception as e:
         logger.warning("Cloudflare Radar check failed: %s", e)
         return CheckResult(
             name="Cloudflare Radar",
-            status="pass",
-            severity="low",
-            summary=f"Cloudflare Radar: could not query API, treating as clean.",
+            status="warning",
+            severity="medium",
+            summary=f"Cloudflare Radar: check failed — {str(e)}",
             details={
-                "malicious": False,
-                "phishing_detected": False,
+                "malicious": None,
+                "phishing_detected": None,
                 "domain_categories": [],
                 "radar_rank": 0,
                 "redirect_chain": None,
@@ -784,6 +833,66 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
                 "error": str(e),
             },
         )
+
+
+def _parse_cloudflare_result(data: dict, hostname: str) -> CheckResult:
+    """Parse a completed Cloudflare Radar scan response into a CheckResult."""
+    # Cloudflare returns verdicts at verdicts.overall.malicious / .phishing
+    verdicts = data.get("verdicts", data.get("scan", {}).get("verdicts", {}))
+    overall = verdicts.get("overall", {})
+    is_malicious = bool(overall.get("malicious", False))
+    is_phishing = bool(
+        overall.get("phishing", False)
+        or overall.get("categories", {}).get("phishing", False)
+    )
+
+    categories = (
+        data.get("categories", [])
+        or data.get("scan", {}).get("categories", [])
+    )
+    rank = (
+        data.get("rank", 0)
+        or data.get("scan", {}).get("rank", 0)
+        or data.get("popularity_rank", 0)
+    )
+
+    # Extract additional fields if available
+    scan_obj = data.get("scan", data)
+    hosting_country = scan_obj.get("hosting_country") or scan_obj.get("country")
+    hosting_asn = scan_obj.get("hosting_asn") or scan_obj.get("asn")
+    technologies = scan_obj.get("technologies")
+    certificates = scan_obj.get("certificates")
+    redirect_chain = scan_obj.get("redirect_chain")
+
+    details = {
+        "malicious": is_malicious,
+        "phishing_detected": is_phishing,
+        "domain_categories": categories if isinstance(categories, list) else [],
+        "radar_rank": rank or 0,
+        "redirect_chain": redirect_chain,
+        "certificates": certificates,
+        "technologies": technologies,
+        "hosting_country": hosting_country,
+        "hosting_asn": hosting_asn,
+    }
+
+    if is_malicious:
+        status = "fail"
+        summary = f"Cloudflare Radar: domain '{hostname}' flagged as malicious."
+    elif is_phishing:
+        status = "fail"
+        summary = f"Cloudflare Radar: domain '{hostname}' flagged for phishing."
+    else:
+        status = "pass"
+        summary = f"Cloudflare Radar: domain '{hostname}' appears clean."
+
+    return CheckResult(
+        name="Cloudflare Radar",
+        status=status,
+        severity="high" if status == "fail" else "low",
+        summary=summary,
+        details=details,
+    )
 
 
 async def check_shodan_internetdb(url: str) -> CheckResult:

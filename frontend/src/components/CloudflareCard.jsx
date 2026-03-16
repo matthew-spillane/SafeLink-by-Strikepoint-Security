@@ -22,6 +22,8 @@ export default function CloudflareCard({ data }) {
   const [expanded, setExpanded] = useState(false);
   const isUnavailable = !data || data.status === "error" || data.status === "skipped" || data.status === "unavailable";
 
+  const isTimeout = data?.timeout === true || data?.malicious === null;
+
   // Map backend field names
   const isMalicious = data?.malicious;
   const isPhishing = data?.phishing_detected;
@@ -48,6 +50,8 @@ export default function CloudflareCard({ data }) {
         <div className="flex items-center gap-2">
           {isUnavailable ? (
             <span className="text-xs font-mono px-2 py-0.5 rounded-sm bg-[#1c2128] text-[#8b949e] border border-[#30363d]">unavailable</span>
+          ) : isTimeout ? (
+            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm bg-[#d29922]/10 text-[#d29922]">TIMED OUT</span>
           ) : (
             <>
               <StatusPill value={isMalicious} trueLabel="MALICIOUS" falseLabel="CLEAN" />
