@@ -711,7 +711,7 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
 
         scan_api = "https://radar.cloudflare.com/api/scan"
         poll_interval = 10  # seconds between polls
-        max_wait = 90       # total seconds before timeout
+        max_wait = 30       # total seconds before timeout
 
         async with httpx.AsyncClient(timeout=15) as client:
             # Step 1: Submit the URL for scanning
@@ -826,11 +826,15 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
 
             # Step 3: Handle timeout — never return false safe
             if scan_data is None:
+                report_url = f"https://radar.cloudflare.com/scan/{scan_id}"
                 return CheckResult(
                     name="Cloudflare Radar",
-                    status="warning",
+                    status="in_progress",
                     severity="medium",
-                    summary=f"Cloudflare Radar: scan timed out after {max_wait}s for '{hostname}'.",
+                    summary=(
+                        f"Cloudflare Radar: scan still processing for '{hostname}'. "
+                        f"Results may be available shortly."
+                    ),
                     details={
                         "malicious": None,
                         "phishing_detected": None,
@@ -841,12 +845,14 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
                         "technologies": None,
                         "hosting_country": None,
                         "hosting_asn": None,
-                        "timeout": True,
+                        "in_progress": True,
+                        "scan_id": scan_id,
+                        "report_url": report_url,
                     },
                 )
 
             # Step 4: Parse completed scan results
-            return _parse_cloudflare_result(scan_data, hostname)
+            return _parse_cloudflare_result(scan_data, hostname, scan_id=scan_id)
 
     except Exception as e:
         logger.warning("Cloudflare Radar check failed: %s", e)
@@ -870,7 +876,7 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
         )
 
 
-def _parse_cloudflare_result(data: dict, hostname: str) -> CheckResult:
+def _parse_cloudflare_result(data: dict, hostname: str, scan_id: str | None = None) -> CheckResult:
     """Parse a completed Cloudflare Radar scan response into a CheckResult."""
     # The API may wrap everything under a "result" or "scan" key.
     # Unwrap to find the object that contains "verdicts".
@@ -1000,6 +1006,7 @@ def _parse_cloudflare_result(data: dict, hostname: str) -> CheckResult:
         "technologies": technologies,
         "hosting_country": hosting_country,
         "hosting_asn": hosting_asn,
+        "report_url": f"https://radar.cloudflare.com/scan/{scan_id}" if scan_id else None,
     }
 
     if is_malicious is True:
