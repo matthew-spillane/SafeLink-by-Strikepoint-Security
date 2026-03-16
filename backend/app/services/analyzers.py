@@ -785,9 +785,20 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
                     continue
 
                 poll_data = poll_resp.json()
+
+                # Cloudflare uses task.status ("Queued"/"InProgress"/"Finished")
+                # or may use a top-level status field. Also check inside "result".
                 scan_status = (
                     poll_data.get("status")
+                    or poll_data.get("task", {}).get("status")
                     or poll_data.get("scan", {}).get("status")
+                    or poll_data.get("result", {}).get("task", {}).get("status")
+                    or ""
+                ).lower()
+
+                logger.debug(
+                    "Cloudflare Radar poll %s: status=%s, keys=%s",
+                    scan_id, scan_status, list(poll_data.keys()),
                 )
 
                 if scan_status in ("completed", "finished", "done"):
@@ -861,46 +872,129 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
 
 def _parse_cloudflare_result(data: dict, hostname: str) -> CheckResult:
     """Parse a completed Cloudflare Radar scan response into a CheckResult."""
-    # Cloudflare returns verdicts at verdicts.overall.malicious / .phishing
-    verdicts = data.get("verdicts", data.get("scan", {}).get("verdicts", {}))
+    # The API may wrap everything under a "result" or "scan" key.
+    # Unwrap to find the object that contains "verdicts".
+    root = data
+    if "result" in data and isinstance(data["result"], dict):
+        root = data["result"]
+    elif "scan" in data and isinstance(data["scan"], dict):
+        root = data["scan"]
+
+    logger.info(
+        "Cloudflare Radar raw response keys for %s: top=%s, root=%s",
+        hostname,
+        list(data.keys()),
+        list(root.keys()),
+    )
+
+    # --- Verdicts ---
+    # Path: verdicts.overall.malicious (bool)
+    # Path: verdicts.overall.categories (array of strings, e.g. ["Phishing"])
+    verdicts = root.get("verdicts", {})
     overall = verdicts.get("overall", {})
 
-    # Use None as sentinel — if the field is absent the scan data is
-    # incomplete and we must NOT default to False (clean).
     raw_malicious = overall.get("malicious")
-    raw_phishing = overall.get("phishing")
-    raw_phishing_cat = overall.get("categories", {}).get("phishing")
+    verdict_categories = overall.get("categories")  # list of strings like ["Phishing"]
 
-    is_malicious = bool(raw_malicious) if raw_malicious is not None else None
-    is_phishing = (
-        bool(raw_phishing or raw_phishing_cat)
-        if (raw_phishing is not None or raw_phishing_cat is not None)
-        else None
-    )
+    # Phishing can be signalled in multiple places:
+    # 1. verdicts.overall.categories containing "Phishing"
+    # 2. verdicts.overall.phishing (bool, may not exist)
+    # 3. meta.processors.phishing (list of phishing detections)
+    # 4. page.categories containing phishing-related entries
+    phishing_from_verdict_cats = False
+    if isinstance(verdict_categories, list):
+        phishing_from_verdict_cats = any(
+            "phish" in c.lower() for c in verdict_categories if isinstance(c, str)
+        )
 
-    categories = (
-        data.get("categories", [])
-        or data.get("scan", {}).get("categories", [])
-    )
+    phishing_from_verdict_bool = overall.get("phishing")
+
+    # meta.processors.phishing — Cloudflare's dedicated phishing scanner
+    meta = root.get("meta", {})
+    processors = meta.get("processors", {})
+    meta_phishing = processors.get("phishing")
+    phishing_from_meta = bool(meta_phishing) if meta_phishing else False
+
+    # page.categories — page-level category tags
+    page = root.get("page", {})
+    page_categories = page.get("categories", [])
+    phishing_from_page = False
+    if isinstance(page_categories, list):
+        phishing_from_page = any(
+            "phish" in str(c).lower() for c in page_categories
+        )
+
+    # Combine all phishing signals
+    is_phishing: bool | None
+    if phishing_from_verdict_cats or phishing_from_meta or phishing_from_page:
+        is_phishing = True
+    elif phishing_from_verdict_bool is not None:
+        is_phishing = bool(phishing_from_verdict_bool)
+    elif isinstance(verdict_categories, list):
+        # Categories array was present but didn't contain phishing
+        is_phishing = False
+    else:
+        is_phishing = None
+
+    # Malicious verdict
+    is_malicious: bool | None
+    if raw_malicious is not None:
+        is_malicious = bool(raw_malicious)
+    else:
+        is_malicious = None
+
+    # --- Domain categories ---
+    # meta.processors.domainCategories
+    domain_categories = processors.get("domainCategories", [])
+    if not isinstance(domain_categories, list):
+        domain_categories = []
+    # Also collect page.categories and verdict categories
+    all_categories = list(domain_categories)
+    if isinstance(page_categories, list):
+        all_categories.extend(page_categories)
+    if isinstance(verdict_categories, list):
+        all_categories.extend(verdict_categories)
+    # Deduplicate while preserving order
+    seen: set = set()
+    unique_categories: list = []
+    for c in all_categories:
+        c_str = str(c)
+        if c_str not in seen:
+            seen.add(c_str)
+            unique_categories.append(c)
+
+    # --- Radar rank ---
     rank = (
-        data.get("rank", 0)
-        or data.get("scan", {}).get("rank", 0)
-        or data.get("popularity_rank", 0)
+        processors.get("radarRank", {}).get("rank", 0)
+        or processors.get("rank", 0)
+        or root.get("rank", 0)
+        or 0
     )
 
-    # Extract additional fields if available
-    scan_obj = data.get("scan", data)
-    hosting_country = scan_obj.get("hosting_country") or scan_obj.get("country")
-    hosting_asn = scan_obj.get("hosting_asn") or scan_obj.get("asn")
-    technologies = scan_obj.get("technologies")
-    certificates = scan_obj.get("certificates")
-    redirect_chain = scan_obj.get("redirect_chain")
+    # --- Additional fields ---
+    hosting_country = page.get("country") or root.get("hosting_country")
+    hosting_asn = page.get("asn") or root.get("hosting_asn")
+    technologies = processors.get("wappa") or root.get("technologies")
+    certificates = root.get("certificates") or root.get("lists", {}).get("certificates")
+    redirect_chain = page.get("history") or root.get("redirect_chain")
+
+    logger.info(
+        "Cloudflare Radar parsed for %s: malicious=%s, phishing=%s, "
+        "verdict_cats=%s, meta_phishing=%s, page_cats=%s",
+        hostname,
+        raw_malicious,
+        is_phishing,
+        verdict_categories,
+        meta_phishing,
+        page_categories,
+    )
 
     details = {
         "malicious": is_malicious,
         "phishing_detected": is_phishing,
-        "domain_categories": categories if isinstance(categories, list) else [],
-        "radar_rank": rank or 0,
+        "domain_categories": unique_categories,
+        "verdict_categories": verdict_categories or [],
+        "radar_rank": rank,
         "redirect_chain": redirect_chain,
         "certificates": certificates,
         "technologies": technologies,
