@@ -696,7 +696,13 @@ async def check_page_content(url: str) -> CheckResult:
 
 
 async def check_cloudflare_radar(url: str) -> CheckResult:
-    """Submit URL to Cloudflare Radar URL Scanner and poll for results."""
+    """Submit URL to Cloudflare Radar URL Scanner and poll for results.
+
+    Timeout structure:
+    - Submission POST: 10 s (just sending the URL)
+    - Polling GET:     10 s per request
+    - Polling loop:    up to 30 s total (3 poll attempts at 10 s intervals)
+    """
     try:
         parsed = urlparse(url)
         hostname = parsed.hostname
@@ -711,83 +717,126 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
 
         scan_api = "https://radar.cloudflare.com/api/scan"
         poll_interval = 10  # seconds between polls
-        max_wait = 30       # total seconds before timeout
+        max_wait = 30       # total seconds for polling loop only
 
-        async with httpx.AsyncClient(timeout=15) as client:
-            # Step 1: Submit the URL for scanning
-            submit_resp = await client.post(scan_api, json={"url": url})
-
-            if submit_resp.status_code not in (200, 201, 202):
+        # ----- Step 1: Submit the URL (10 s timeout) -----
+        async with httpx.AsyncClient(timeout=10) as submit_client:
+            try:
+                submit_resp = await submit_client.post(
+                    scan_api, json={"url": url},
+                )
+            except httpx.TimeoutException:
+                logger.warning("Cloudflare Radar: submission timed out for %s", hostname)
                 return CheckResult(
                     name="Cloudflare Radar",
                     status="warning",
                     severity="medium",
-                    summary=f"Cloudflare Radar: scan submission returned HTTP {submit_resp.status_code}.",
+                    summary=f"Cloudflare Radar: scan submission timed out for '{hostname}'.",
                     details={
                         "malicious": None,
                         "phishing_detected": None,
                         "domain_categories": [],
-                        "radar_rank": 0,
-                        "redirect_chain": None,
-                        "certificates": None,
-                        "technologies": None,
-                        "hosting_country": None,
-                        "hosting_asn": None,
-                        "error": f"HTTP {submit_resp.status_code}",
+                        "error": "Submission request timed out",
                     },
                 )
 
-            submit_data = submit_resp.json()
-            scan_id = (
-                submit_data.get("uuid")
-                or submit_data.get("scanId")
-                or submit_data.get("scan_id")
-                or submit_data.get("id")
+        logger.info(
+            "Cloudflare Radar submit for %s: HTTP %s, body_preview=%.200s",
+            hostname,
+            submit_resp.status_code,
+            submit_resp.text,
+        )
+
+        if submit_resp.status_code not in (200, 201, 202):
+            return CheckResult(
+                name="Cloudflare Radar",
+                status="warning",
+                severity="medium",
+                summary=f"Cloudflare Radar: scan submission returned HTTP {submit_resp.status_code}.",
+                details={
+                    "malicious": None,
+                    "phishing_detected": None,
+                    "domain_categories": [],
+                    "error": f"HTTP {submit_resp.status_code}: {submit_resp.text[:200]}",
+                },
             )
 
-            if not scan_id:
-                # No scan ID means we cannot poll — treat as inconclusive
-                # Do NOT parse the submit response as a result; it has no
-                # verdicts and would produce a false clean verdict.
-                logger.warning(
-                    "Cloudflare Radar: no scan ID in submit response for %s: %s",
-                    hostname,
-                    list(submit_data.keys()),
-                )
-                return CheckResult(
-                    name="Cloudflare Radar",
-                    status="warning",
-                    severity="medium",
-                    summary=f"Cloudflare Radar: scan submitted but no scan ID returned for '{hostname}'.",
-                    details={
-                        "malicious": None,
-                        "phishing_detected": None,
-                        "domain_categories": [],
-                        "radar_rank": 0,
-                        "redirect_chain": None,
-                        "certificates": None,
-                        "technologies": None,
-                        "hosting_country": None,
-                        "hosting_asn": None,
-                        "error": "No scan ID in submit response",
-                    },
-                )
+        submit_data = submit_resp.json()
 
-            # Step 2: Poll until scan completes or timeout
-            elapsed = 0
-            scan_data = None
+        # Log all keys so we can see exactly what Cloudflare returns
+        logger.info(
+            "Cloudflare Radar submit response keys for %s: %s",
+            hostname,
+            list(submit_data.keys()),
+        )
+        # Also check nested keys (API may wrap in "result")
+        if "result" in submit_data and isinstance(submit_data["result"], dict):
+            logger.info(
+                "Cloudflare Radar submit result.keys for %s: %s",
+                hostname,
+                list(submit_data["result"].keys()),
+            )
+
+        # Extract scan ID — try every known field name at every nesting level
+        scan_id = _extract_scan_id(submit_data)
+
+        if not scan_id:
+            logger.warning(
+                "Cloudflare Radar: no scan ID found for %s. Full response: %.500s",
+                hostname,
+                submit_resp.text,
+            )
+            return CheckResult(
+                name="Cloudflare Radar",
+                status="warning",
+                severity="medium",
+                summary=f"Cloudflare Radar: scan submitted but no scan ID returned for '{hostname}'.",
+                details={
+                    "malicious": None,
+                    "phishing_detected": None,
+                    "domain_categories": [],
+                    "error": "No scan ID in submit response",
+                    "response_keys": list(submit_data.keys()),
+                },
+            )
+
+        report_url = f"https://radar.cloudflare.com/scan/{scan_id}"
+        logger.info("Cloudflare Radar: got scan_id=%s for %s, polling…", scan_id, hostname)
+
+        # ----- Step 2: Poll until scan completes (separate client, 10 s per request) -----
+        scan_data = None
+        elapsed = 0
+        async with httpx.AsyncClient(timeout=10) as poll_client:
             while elapsed < max_wait:
                 await asyncio.sleep(poll_interval)
                 elapsed += poll_interval
 
-                poll_resp = await client.get(f"{scan_api}/{scan_id}")
+                try:
+                    poll_resp = await poll_client.get(f"{scan_api}/{scan_id}")
+                except httpx.TimeoutException:
+                    logger.debug("Cloudflare Radar poll timed out at %ds", elapsed)
+                    continue
+
+                logger.info(
+                    "Cloudflare Radar poll %s at %ds: HTTP %s",
+                    scan_id, elapsed, poll_resp.status_code,
+                )
+
+                # 404 = scan still in progress — keep polling
+                if poll_resp.status_code == 404:
+                    continue
+
+                # Any other non-200 — log and keep trying
                 if poll_resp.status_code != 200:
+                    logger.warning(
+                        "Cloudflare Radar poll %s: unexpected HTTP %s",
+                        scan_id, poll_resp.status_code,
+                    )
                     continue
 
                 poll_data = poll_resp.json()
 
                 # Cloudflare uses task.status ("Queued"/"InProgress"/"Finished")
-                # or may use a top-level status field. Also check inside "result".
                 scan_status = (
                     poll_data.get("status")
                     or poll_data.get("task", {}).get("status")
@@ -796,7 +845,7 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
                     or ""
                 ).lower()
 
-                logger.debug(
+                logger.info(
                     "Cloudflare Radar poll %s: status=%s, keys=%s",
                     scan_id, scan_status, list(poll_data.keys()),
                 )
@@ -814,48 +863,41 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
                             "malicious": None,
                             "phishing_detected": None,
                             "domain_categories": [],
-                            "radar_rank": 0,
-                            "redirect_chain": None,
-                            "certificates": None,
-                            "technologies": None,
-                            "hosting_country": None,
-                            "hosting_asn": None,
                             "error": "Cloudflare scan reported failure",
+                            "report_url": report_url,
                         },
                     )
+                # Any other status (queued, inprogress, etc.) — keep polling
 
-            # Step 3: Handle timeout — never return false safe
-            if scan_data is None:
-                report_url = f"https://radar.cloudflare.com/scan/{scan_id}"
-                return CheckResult(
-                    name="Cloudflare Radar",
-                    status="in_progress",
-                    severity="medium",
-                    summary=(
-                        f"Cloudflare Radar: scan still processing for '{hostname}'. "
-                        f"Results may be available shortly."
-                    ),
-                    details={
-                        "malicious": None,
-                        "phishing_detected": None,
-                        "domain_categories": [],
-                        "radar_rank": 0,
-                        "redirect_chain": None,
-                        "certificates": None,
-                        "technologies": None,
-                        "hosting_country": None,
-                        "hosting_asn": None,
-                        "in_progress": True,
-                        "scan_id": scan_id,
-                        "report_url": report_url,
-                    },
-                )
+        # ----- Step 3: Timeout — return in_progress, never false safe -----
+        if scan_data is None:
+            logger.info(
+                "Cloudflare Radar: scan %s still processing after %ds for %s",
+                scan_id, max_wait, hostname,
+            )
+            return CheckResult(
+                name="Cloudflare Radar",
+                status="in_progress",
+                severity="medium",
+                summary=(
+                    f"Cloudflare Radar: scan still processing for '{hostname}'. "
+                    f"Results may be available shortly."
+                ),
+                details={
+                    "malicious": None,
+                    "phishing_detected": None,
+                    "domain_categories": [],
+                    "in_progress": True,
+                    "scan_id": scan_id,
+                    "report_url": report_url,
+                },
+            )
 
-            # Step 4: Parse completed scan results
-            return _parse_cloudflare_result(scan_data, hostname, scan_id=scan_id)
+        # ----- Step 4: Parse completed scan -----
+        return _parse_cloudflare_result(scan_data, hostname, scan_id=scan_id)
 
     except Exception as e:
-        logger.warning("Cloudflare Radar check failed: %s", e)
+        logger.warning("Cloudflare Radar check failed for %s: %s", url, e, exc_info=True)
         return CheckResult(
             name="Cloudflare Radar",
             status="warning",
@@ -865,15 +907,49 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
                 "malicious": None,
                 "phishing_detected": None,
                 "domain_categories": [],
-                "radar_rank": 0,
-                "redirect_chain": None,
-                "certificates": None,
-                "technologies": None,
-                "hosting_country": None,
-                "hosting_asn": None,
                 "error": str(e),
             },
         )
+
+
+def _extract_scan_id(data: dict) -> str | None:
+    """Extract the scan UUID from a Cloudflare submit response.
+
+    Tries every known field name at root level, inside "result", and
+    inside "task", since the API structure may vary.
+    """
+    id_fields = ("uuid", "scanId", "scan_id", "id")
+
+    # Check root level
+    for field in id_fields:
+        val = data.get(field)
+        if val and isinstance(val, str):
+            return val
+
+    # Check inside "result" wrapper
+    result = data.get("result")
+    if isinstance(result, dict):
+        for field in id_fields:
+            val = result.get(field)
+            if val and isinstance(val, str):
+                return val
+        # Also check result.task.uuid
+        task = result.get("task")
+        if isinstance(task, dict):
+            for field in id_fields:
+                val = task.get(field)
+                if val and isinstance(val, str):
+                    return val
+
+    # Check inside "task" at root
+    task = data.get("task")
+    if isinstance(task, dict):
+        for field in id_fields:
+            val = task.get(field)
+            if val and isinstance(val, str):
+                return val
+
+    return None
 
 
 def _parse_cloudflare_result(data: dict, hostname: str, scan_id: str | None = None) -> CheckResult:
