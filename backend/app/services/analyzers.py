@@ -739,15 +739,39 @@ async def check_cloudflare_radar(url: str) -> CheckResult:
 
             submit_data = submit_resp.json()
             scan_id = (
-                submit_data.get("scanId")
+                submit_data.get("uuid")
+                or submit_data.get("scanId")
                 or submit_data.get("scan_id")
                 or submit_data.get("id")
             )
 
             if not scan_id:
-                # Some endpoints return results inline without a scan ID
-                # Try to parse as a direct result
-                return _parse_cloudflare_result(submit_data, hostname)
+                # No scan ID means we cannot poll — treat as inconclusive
+                # Do NOT parse the submit response as a result; it has no
+                # verdicts and would produce a false clean verdict.
+                logger.warning(
+                    "Cloudflare Radar: no scan ID in submit response for %s: %s",
+                    hostname,
+                    list(submit_data.keys()),
+                )
+                return CheckResult(
+                    name="Cloudflare Radar",
+                    status="warning",
+                    severity="medium",
+                    summary=f"Cloudflare Radar: scan submitted but no scan ID returned for '{hostname}'.",
+                    details={
+                        "malicious": None,
+                        "phishing_detected": None,
+                        "domain_categories": [],
+                        "radar_rank": 0,
+                        "redirect_chain": None,
+                        "certificates": None,
+                        "technologies": None,
+                        "hosting_country": None,
+                        "hosting_asn": None,
+                        "error": "No scan ID in submit response",
+                    },
+                )
 
             # Step 2: Poll until scan completes or timeout
             elapsed = 0
@@ -840,10 +864,18 @@ def _parse_cloudflare_result(data: dict, hostname: str) -> CheckResult:
     # Cloudflare returns verdicts at verdicts.overall.malicious / .phishing
     verdicts = data.get("verdicts", data.get("scan", {}).get("verdicts", {}))
     overall = verdicts.get("overall", {})
-    is_malicious = bool(overall.get("malicious", False))
-    is_phishing = bool(
-        overall.get("phishing", False)
-        or overall.get("categories", {}).get("phishing", False)
+
+    # Use None as sentinel — if the field is absent the scan data is
+    # incomplete and we must NOT default to False (clean).
+    raw_malicious = overall.get("malicious")
+    raw_phishing = overall.get("phishing")
+    raw_phishing_cat = overall.get("categories", {}).get("phishing")
+
+    is_malicious = bool(raw_malicious) if raw_malicious is not None else None
+    is_phishing = (
+        bool(raw_phishing or raw_phishing_cat)
+        if (raw_phishing is not None or raw_phishing_cat is not None)
+        else None
     )
 
     categories = (
@@ -876,20 +908,27 @@ def _parse_cloudflare_result(data: dict, hostname: str) -> CheckResult:
         "hosting_asn": hosting_asn,
     }
 
-    if is_malicious:
+    if is_malicious is True:
         status = "fail"
         summary = f"Cloudflare Radar: domain '{hostname}' flagged as malicious."
-    elif is_phishing:
+    elif is_phishing is True:
         status = "fail"
         summary = f"Cloudflare Radar: domain '{hostname}' flagged for phishing."
+    elif is_malicious is None and is_phishing is None:
+        # Verdicts were absent from the response — inconclusive
+        status = "warning"
+        summary = f"Cloudflare Radar: no verdict data returned for '{hostname}'."
     else:
+        # Explicitly False — Cloudflare confirmed clean
         status = "pass"
         summary = f"Cloudflare Radar: domain '{hostname}' appears clean."
+
+    severity = "high" if status == "fail" else ("medium" if status == "warning" else "low")
 
     return CheckResult(
         name="Cloudflare Radar",
         status=status,
-        severity="high" if status == "fail" else "low",
+        severity=severity,
         summary=summary,
         details=details,
     )
