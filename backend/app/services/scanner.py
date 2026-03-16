@@ -24,6 +24,8 @@ from app.services.analyzers import (
     check_ip_geolocation,
     check_url_structure,
     check_page_content,
+    check_cloudflare_radar,
+    check_shodan_internetdb,
     check_urlscan,
 )
 
@@ -79,6 +81,20 @@ def calculate_risk_score(checks: list[CheckResult]) -> int:
                     # Minimal weight — brand keywords alone (social login
                     # buttons, share widgets) should not swing the score.
                     score += min(len(findings) * 2, 5)
+        elif check.name == "Cloudflare Radar" and check.status == "fail":
+            details = check.details if isinstance(check.details, dict) else {}
+            if details.get("malicious"):
+                score += 15
+            if details.get("phishing_detected"):
+                score += 10
+        elif check.name == "Shodan InternetDB":
+            details = check.details if isinstance(check.details, dict) else {}
+            high_risk = details.get("high_risk_tags") or []
+            if high_risk:
+                score += 15
+            vuln_count = len(details.get("vulns", []))
+            if vuln_count > 0:
+                score += min(vuln_count * 2, 10)
 
     return min(score, 100)
 
@@ -255,6 +271,8 @@ async def run_scan(url: str, db: Session, *, session_id: str | None = None) -> S
             check_ip_geolocation(url),
             check_url_structure(url),
             check_page_content(url),
+            check_cloudflare_radar(url),
+            check_shodan_internetdb(url),
         ),
         check_urlscan(url),
     )

@@ -695,6 +695,190 @@ async def check_page_content(url: str) -> CheckResult:
         )
 
 
+async def check_cloudflare_radar(url: str) -> CheckResult:
+    """Query Cloudflare Radar URL Scanner for domain intelligence."""
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return CheckResult(
+                name="Cloudflare Radar",
+                status="skipped",
+                severity="info",
+                summary="Could not extract hostname from URL.",
+                details={},
+            )
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            # Use Cloudflare Radar domain categorization endpoint (no key needed)
+            resp = await client.get(
+                f"https://radar.cloudflare.com/api/domains/{hostname}"
+            )
+
+            details = {
+                "malicious": False,
+                "phishing_detected": False,
+                "domain_categories": [],
+                "radar_rank": 0,
+                "redirect_chain": None,
+                "certificates": None,
+                "technologies": None,
+                "hosting_country": None,
+                "hosting_asn": None,
+            }
+
+            if resp.status_code == 200:
+                data = resp.json()
+                # Extract whatever fields the API returns
+                categories = data.get("categories", [])
+                rank = data.get("rank", data.get("popularity_rank", 0))
+                is_malicious = data.get("malicious", False)
+                is_phishing = data.get("phishing", False)
+
+                details["domain_categories"] = categories if isinstance(categories, list) else []
+                details["radar_rank"] = rank or 0
+                details["malicious"] = bool(is_malicious)
+                details["phishing_detected"] = bool(is_phishing)
+                details["hosting_country"] = data.get("hosting_country") or data.get("country")
+                details["hosting_asn"] = data.get("hosting_asn") or data.get("asn")
+
+                # Technologies and certificates if present
+                if data.get("technologies"):
+                    details["technologies"] = data["technologies"]
+                if data.get("certificates"):
+                    details["certificates"] = data["certificates"]
+
+            status = "pass"
+            summary = f"Cloudflare Radar: domain '{hostname}' appears clean."
+            if details["malicious"]:
+                status = "fail"
+                summary = f"Cloudflare Radar: domain '{hostname}' flagged as malicious."
+            elif details["phishing_detected"]:
+                status = "fail"
+                summary = f"Cloudflare Radar: domain '{hostname}' flagged for phishing."
+
+            return CheckResult(
+                name="Cloudflare Radar",
+                status=status,
+                severity="high" if status == "fail" else "low",
+                summary=summary,
+                details=details,
+            )
+    except Exception as e:
+        logger.warning("Cloudflare Radar check failed: %s", e)
+        return CheckResult(
+            name="Cloudflare Radar",
+            status="pass",
+            severity="low",
+            summary=f"Cloudflare Radar: could not query API, treating as clean.",
+            details={
+                "malicious": False,
+                "phishing_detected": False,
+                "domain_categories": [],
+                "radar_rank": 0,
+                "redirect_chain": None,
+                "certificates": None,
+                "technologies": None,
+                "hosting_country": None,
+                "hosting_asn": None,
+                "error": str(e),
+            },
+        )
+
+
+async def check_shodan_internetdb(url: str) -> CheckResult:
+    """Query Shodan InternetDB for host intelligence (free, no API key needed)."""
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return CheckResult(
+                name="Shodan InternetDB",
+                status="skipped",
+                severity="info",
+                summary="Could not extract hostname from URL.",
+                details={},
+            )
+
+        # Resolve hostname to IP
+        ip = await asyncio.wait_for(
+            asyncio.to_thread(socket.gethostbyname, hostname), timeout=5
+        )
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(f"https://internetdb.shodan.io/{ip}")
+
+        details = {
+            "ip": ip,
+            "ports": [],
+            "tags": [],
+            "vulns": [],
+            "hostnames": [],
+            "cpes": [],
+            "high_risk_tags": None,
+        }
+
+        if resp.status_code == 200:
+            data = resp.json()
+            details["ports"] = data.get("ports", [])
+            details["tags"] = data.get("tags", [])
+            details["vulns"] = data.get("vulns", [])
+            details["hostnames"] = data.get("hostnames", [])
+            details["cpes"] = data.get("cpes", [])
+
+            # Flag high-risk tags
+            high_risk = {"vpn", "tor", "proxy", "compromised", "c2", "botnet"}
+            found_high_risk = [
+                t for t in details["tags"]
+                if t.lower() in high_risk
+            ]
+            if found_high_risk:
+                details["high_risk_tags"] = found_high_risk
+
+        vuln_count = len(details["vulns"])
+        has_high_risk = details["high_risk_tags"] and len(details["high_risk_tags"]) > 0
+
+        if has_high_risk:
+            status = "fail"
+            severity = "high"
+            summary = f"Shodan InternetDB: host {ip} has high-risk tags: {', '.join(details['high_risk_tags'])}."
+        elif vuln_count > 0:
+            status = "warning"
+            severity = "medium"
+            summary = f"Shodan InternetDB: host {ip} has {vuln_count} known CVE(s)."
+        else:
+            port_count = len(details["ports"])
+            status = "pass"
+            severity = "low"
+            summary = f"Shodan InternetDB: host {ip} has {port_count} open port(s), no known vulnerabilities."
+
+        return CheckResult(
+            name="Shodan InternetDB",
+            status=status,
+            severity=severity,
+            summary=summary,
+            details=details,
+        )
+    except Exception as e:
+        logger.warning("Shodan InternetDB check failed: %s", e)
+        return CheckResult(
+            name="Shodan InternetDB",
+            status="pass",
+            severity="low",
+            summary="Shodan InternetDB: could not query API, treating as clean.",
+            details={
+                "ip": None,
+                "ports": [],
+                "tags": [],
+                "vulns": [],
+                "hostnames": [],
+                "cpes": [],
+                "high_risk_tags": None,
+                "error": str(e),
+            },
+        )
+
+
 async def check_urlscan(url: str) -> URLScanResult:
     """Submit URL to URLscan.io and return immediately with UUID (no polling)."""
     if not URLSCAN_API_KEY:
