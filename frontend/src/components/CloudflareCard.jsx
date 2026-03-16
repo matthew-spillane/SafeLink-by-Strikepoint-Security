@@ -26,7 +26,7 @@ function Row({ label, children, border = true }) {
 }
 
 export default function CloudflareCard({ data }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const isUnavailable = !data || data.status === "error" || data.status === "skipped" || data.status === "unavailable";
   const isInProgress = data?.in_progress === true || data?.status === "in_progress";
   const reportUrl = data?.report_url;

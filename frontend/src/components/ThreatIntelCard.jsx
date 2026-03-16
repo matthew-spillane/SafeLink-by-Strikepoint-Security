@@ -13,7 +13,7 @@ function StatusDot({ status }) {
 }
 
 export default function ThreatIntelCard({ checks, otxData }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   const vtCheck = checks.find((c) => c.name === "VirusTotal");
   const gsbCheck = checks.find((c) => c.name === "Google Safe Browsing");

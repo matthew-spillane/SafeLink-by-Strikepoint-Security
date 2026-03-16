@@ -13,7 +13,7 @@ function Row({ label, children, border = true }) {
 const warningTags = new Set(["vpn", "tor", "proxy", "scanner", "compromised", "c2", "botnet"]);
 
 export default function HostIntelCard({ data }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const isUnavailable = !data || data.status === "error" || data.status === "skipped" || data.status === "unavailable";
 
   // Map backend field names

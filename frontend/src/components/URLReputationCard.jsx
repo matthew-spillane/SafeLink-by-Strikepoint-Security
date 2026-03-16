@@ -35,7 +35,7 @@ function ScoreBar({ score }) {
 }
 
 export default function URLReputationCard({ data }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const isUnavailable = !data || data.status === "error" || data.status === "skipped";
   const score = data?.risk_score ?? null;
 
