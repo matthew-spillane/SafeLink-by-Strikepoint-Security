@@ -7,8 +7,6 @@ import PagePreview from "./PagePreview";
 import SummaryBar from "./SummaryBar";
 import CheckCard from "./CheckCard";
 import RedirectChain from "./RedirectChain";
-import CloudflareCard from "./CloudflareCard";
-import URLReputationCard from "./URLReputationCard";
 import HostIntelCard from "./HostIntelCard";
 import ThreatIntelCard from "./ThreatIntelCard";
 import ScanSummaryPanel from "./ScanSummaryPanel";
@@ -18,9 +16,7 @@ import ModuleStatusPanel from "./ModuleStatusPanel";
 const dedicatedCardNames = new Set([
   "VirusTotal",
   "Google Safe Browsing",
-  "Cloudflare Radar",
   "Shodan InternetDB",
-  "cloudflare_radar",
   "shodan_internetdb",
   "AlienVault OTX",
   "alienvault_otx",
@@ -52,7 +48,6 @@ export default function ResultsDashboard({ result, onReset }) {
   );
 
   // Extract module data from checks array
-  const cloudflareData = findCheck(result.checks, "Cloudflare Radar", "cloudflare_radar");
   const shodanData = findCheck(result.checks, "Shodan InternetDB", "shodan_internetdb");
   const otxData = findCheck(result.checks, "AlienVault OTX", "alienvault_otx");
 
@@ -98,22 +93,12 @@ export default function ResultsDashboard({ result, onReset }) {
         </div>
       </div>
 
-      {/* ── Row 3: Three equal columns — Cloudflare / IPQS / Shodan ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="h-full">
-          <CloudflareCard data={cloudflareData} />
-        </div>
-        <div className="h-full">
-          <URLReputationCard data={result.ipqualityscore} />
-        </div>
-        <div className="h-full">
+      {/* ── Row 3: Host Intel + Threat Intel + Module Status ── */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="md:col-span-4">
           <HostIntelCard data={shodanData} />
         </div>
-      </div>
-
-      {/* ── Row 4: Threat Intel (70%) + Module Status (30%) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="md:col-span-8">
+        <div className="md:col-span-4">
           <ThreatIntelCard checks={result.checks} otxData={otxData} />
         </div>
         <div className="md:col-span-4">
