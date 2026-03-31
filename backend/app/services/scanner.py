@@ -24,7 +24,6 @@ from app.services.analyzers import (
     check_ip_geolocation,
     check_url_structure,
     check_page_content,
-    check_cloudflare_radar,
     check_shodan_internetdb,
     check_alienvault_otx,
     check_urlscan,
@@ -32,75 +31,78 @@ from app.services.analyzers import (
 
 
 def calculate_risk_score(checks: list[CheckResult]) -> int:
+    """Calculate risk score with weighted signals.
+
+    Weight budget (100 pts):
+      VirusTotal          35  (primary signal)
+      Google Safe Browsing 25
+      AlienVault OTX       10
+      Shodan InternetDB    10
+      Contextual checks    20  (domain age, SSL, redirects, keywords,
+                                lookalike, IP geo, URL structure,
+                                page content)
+    """
     score = 0
     for check in checks:
+        # --- Primary reputation signals ---
         if check.name == "VirusTotal" and check.status == "fail":
-            score += 40
+            score += 35
         elif check.name == "Google Safe Browsing" and check.status == "fail":
-            score += 40
+            score += 25
+        elif check.name == "AlienVault OTX":
+            details = check.details if isinstance(check.details, dict) else {}
+            pulse_count = details.get("pulse_count", 0)
+            if pulse_count > 0:
+                score += min(pulse_count * 3, 10)
+        elif check.name == "Shodan InternetDB":
+            details = check.details if isinstance(check.details, dict) else {}
+            high_risk = details.get("high_risk_tags") or []
+            if high_risk:
+                score += 7
+            vuln_count = len(details.get("vulns", []))
+            if vuln_count > 0:
+                score += min(vuln_count * 1, 3)
+
+        # --- Contextual signals (max ~20 pts combined) ---
         elif check.name == "WHOIS / Domain Age":
             if check.details and isinstance(check.details, dict):
                 age = check.details.get("age_days")
                 if age is not None:
                     if age < 30:
-                        score += 20
+                        score += 4
                     elif age < 180:
-                        score += 10
-        elif check.name == "SSL Certificate":
-            if check.status == "fail":
-                details = check.details if isinstance(check.details, dict) else {}
-                if details.get("scheme") == "http" or "no SSL" in check.summary.lower() or "does not use HTTPS" in check.summary:
-                    score += 15
-                else:
-                    score += 10  # expired or invalid
-        elif check.name == "Redirect Chain":
-            if check.status == "fail":
-                score += 10
+                        score += 2
+        elif check.name == "SSL Certificate" and check.status == "fail":
+            details = check.details if isinstance(check.details, dict) else {}
+            if details.get("scheme") == "http" or "no SSL" in check.summary.lower() or "does not use HTTPS" in check.summary:
+                score += 3
+            else:
+                score += 2  # expired or invalid
+        elif check.name == "Redirect Chain" and check.status == "fail":
+            score += 2
         elif check.name == "Suspicious Keywords":
             if check.details and isinstance(check.details, dict):
                 count = len(check.details.get("keywords", []))
-                score += min(count * 5, 15)
+                score += min(count * 1, 2)
         elif check.name == "Lookalike Domain" and check.status == "fail":
-            score += 25
+            score += 4
         elif check.name == "IP Geolocation" and check.status == "warning":
             if check.details and isinstance(check.details, dict) and check.details.get("org"):
                 if "abused" in check.summary.lower() or "vps" in check.summary.lower():
-                    score += 10
+                    score += 1
         elif check.name == "URL Structure":
             if check.details and isinstance(check.details, dict):
                 flags = check.details.get("flags", [])
-                score += min(len(flags) * 5, 20)
+                score += min(len(flags) * 1, 2)
         elif check.name == "Page Content":
             if check.details and isinstance(check.details, dict):
                 findings = check.details.get("findings", [])
-                # Check for login form with domain mismatch
                 has_login = any("login form" in f.lower() for f in findings)
                 has_mismatch = any("but domain is" in f.lower() for f in findings)
                 if has_login and has_mismatch:
-                    score += 10
+                    score += 2
                 elif findings:
-                    # Minimal weight — brand keywords alone (social login
-                    # buttons, share widgets) should not swing the score.
-                    score += min(len(findings) * 2, 5)
-        elif check.name == "Cloudflare Radar" and check.status == "fail":
-            details = check.details if isinstance(check.details, dict) else {}
-            if details.get("malicious"):
-                score += 15
-            if details.get("phishing_detected"):
-                score += 10
-        elif check.name == "Shodan InternetDB":
-            details = check.details if isinstance(check.details, dict) else {}
-            high_risk = details.get("high_risk_tags") or []
-            if high_risk:
-                score += 15
-            vuln_count = len(details.get("vulns", []))
-            if vuln_count > 0:
-                score += min(vuln_count * 2, 10)
-        elif check.name == "AlienVault OTX":
-            details = check.details if isinstance(check.details, dict) else {}
-            pulse_count = details.get("pulse_count", 0)
-            if pulse_count > 0:
-                score += min(pulse_count * 3, 15)
+                    score += min(len(findings), 1)
 
     return min(score, 100)
 
@@ -277,7 +279,6 @@ async def run_scan(url: str, db: Session, *, session_id: str | None = None) -> S
             check_ip_geolocation(url),
             check_url_structure(url),
             check_page_content(url),
-            check_cloudflare_radar(url),
             check_shodan_internetdb(url),
             check_alienvault_otx(url),
         ),
